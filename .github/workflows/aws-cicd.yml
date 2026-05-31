@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_REGION: ${{ secrets.AWS_REGION || 'us-west-2' }}
       AWS_ROLE_TO_ASSUME_APP: ${{ secrets.AWS_ROLE_TO_ASSUME_APP }}
       FRONTEND_BUCKET: ${{ secrets.FRONTEND_BUCKET }}
       ARTIFACT_BUCKET: ${{ secrets.ARTIFACT_BUCKET }}
@@ -36,14 +36,24 @@ jobs:
           persist-credentials: false
           fetch-depth: 1
 
-      - name: Validate required secrets
+      - name: Check app deployment secrets
+        id: secrets_check
+        shell: bash
         run: |
-          test -n "$AWS_REGION" || (echo "Missing AWS_REGION secret" && exit 1)
-          test -n "$FRONTEND_BUCKET" || (echo "Missing FRONTEND_BUCKET secret" && exit 1)
-          test -n "$ARTIFACT_BUCKET" || (echo "Missing ARTIFACT_BUCKET secret" && exit 1)
-          test -n "$CLOUDFRONT_DISTRIBUTION_ID" || (echo "Missing CLOUDFRONT_DISTRIBUTION_ID secret" && exit 1)
-          test -n "$EC2_INSTANCE_ID" || (echo "Missing EC2_INSTANCE_ID secret" && exit 1)
-          test -n "$AWS_ROLE_TO_ASSUME_APP" || (echo "Missing AWS_ROLE_TO_ASSUME_APP secret" && exit 1)
+          missing=()
+          test -n "$FRONTEND_BUCKET" || missing+=("FRONTEND_BUCKET")
+          test -n "$ARTIFACT_BUCKET" || missing+=("ARTIFACT_BUCKET")
+          test -n "$CLOUDFRONT_DISTRIBUTION_ID" || missing+=("CLOUDFRONT_DISTRIBUTION_ID")
+          test -n "$EC2_INSTANCE_ID" || missing+=("EC2_INSTANCE_ID")
+          test -n "$AWS_ROLE_TO_ASSUME_APP" || missing+=("AWS_ROLE_TO_ASSUME_APP")
+
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "missing=${missing[*]}" >> "$GITHUB_OUTPUT"
+            echo "::warning::Skipping app deployment. Missing secrets: ${missing[*]}"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -76,19 +86,40 @@ jobs:
         working-directory: pvi-careers-api
         run: mvn -B -DskipTests package
 
+      - name: App deploy skipped
+        if: steps.secrets_check.outputs.ready != 'true'
+        shell: bash
+        run: |
+          {
+            echo "## App Deploy Skipped"
+            echo ""
+            echo "Missing required secrets: ${{ steps.secrets_check.outputs.missing }}"
+            echo ""
+            echo "Add these repository secrets, then re-run:"
+            echo "- AWS_ROLE_TO_ASSUME_APP"
+            echo "- FRONTEND_BUCKET"
+            echo "- ARTIFACT_BUCKET"
+            echo "- CLOUDFRONT_DISTRIBUTION_ID"
+            echo "- EC2_INSTANCE_ID"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Configure AWS credentials
+        if: steps.secrets_check.outputs.ready == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_APP }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Upload frontend to S3
+        if: steps.secrets_check.outputs.ready == 'true'
         run: aws s3 sync pvi-engineers/dist "s3://${FRONTEND_BUCKET}" --delete
 
       - name: Invalidate CloudFront cache
+        if: steps.secrets_check.outputs.ready == 'true'
         run: aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*"
 
       - name: Upload backend artifact to S3
+        if: steps.secrets_check.outputs.ready == 'true'
         run: |
           BACKEND_SHA256=$(sha256sum pvi-careers-api/target/pvi-careers-api-0.0.1-SNAPSHOT.jar | awk '{print $1}')
           echo "BACKEND_SHA256=$BACKEND_SHA256" >> "$GITHUB_ENV"
@@ -97,6 +128,7 @@ jobs:
             "s3://${ARTIFACT_BUCKET}/backend/pvi-careers-api.jar"
 
       - name: Deploy backend to EC2 using SSM
+        if: steps.secrets_check.outputs.ready == 'true'
         run: |
           COMMAND_ID=$(aws ssm send-command \
             --document-name "AWS-RunShellScript" \

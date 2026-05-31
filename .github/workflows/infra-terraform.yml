@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_REGION: ${{ secrets.AWS_REGION || 'us-west-2' }}
       AWS_ROLE_TO_ASSUME_INFRA: ${{ secrets.AWS_ROLE_TO_ASSUME_INFRA }}
       TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
       TF_STATE_KEY: ${{ secrets.TF_STATE_KEY }}
@@ -44,25 +44,55 @@ jobs:
           persist-credentials: false
           fetch-depth: 1
 
-      - name: Validate required secrets
+      - name: Check infra deployment secrets
+        id: secrets_check
+        shell: bash
         run: |
-          test -n "$AWS_REGION" || (echo "Missing AWS_REGION secret" && exit 1)
-          test -n "$TF_STATE_BUCKET" || (echo "Missing TF_STATE_BUCKET secret" && exit 1)
-          test -n "$TF_STATE_KEY" || (echo "Missing TF_STATE_KEY secret" && exit 1)
-          test -n "$TF_LOCK_TABLE" || (echo "Missing TF_LOCK_TABLE secret" && exit 1)
-          test -n "$TF_VARS_CONTENT" || (echo "Missing TF_VARS_CONTENT secret" && exit 1)
-          test -n "$AWS_ROLE_TO_ASSUME_INFRA" || (echo "Missing AWS_ROLE_TO_ASSUME_INFRA secret" && exit 1)
+          missing=()
+          test -n "$TF_STATE_BUCKET" || missing+=("TF_STATE_BUCKET")
+          test -n "$TF_STATE_KEY" || missing+=("TF_STATE_KEY")
+          test -n "$TF_LOCK_TABLE" || missing+=("TF_LOCK_TABLE")
+          test -n "$TF_VARS_CONTENT" || missing+=("TF_VARS_CONTENT")
+          test -n "$AWS_ROLE_TO_ASSUME_INFRA" || missing+=("AWS_ROLE_TO_ASSUME_INFRA")
+
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "missing=${missing[*]}" >> "$GITHUB_OUTPUT"
+            echo "::warning::Skipping infra deployment. Missing secrets: ${missing[*]}"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Infra workflow skipped
+        if: steps.secrets_check.outputs.ready != 'true'
+        shell: bash
+        run: |
+          {
+            echo "## Infra Workflow Skipped"
+            echo ""
+            echo "Missing required secrets: ${{ steps.secrets_check.outputs.missing }}"
+            echo ""
+            echo "Add these repository secrets, then re-run:"
+            echo "- AWS_ROLE_TO_ASSUME_INFRA"
+            echo "- TF_STATE_BUCKET"
+            echo "- TF_STATE_KEY"
+            echo "- TF_LOCK_TABLE"
+            echo "- TF_VARS_CONTENT"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Configure AWS credentials
+        if: steps.secrets_check.outputs.ready == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_INFRA }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
+        if: steps.secrets_check.outputs.ready == 'true'
         uses: hashicorp/setup-terraform@v3
 
       - name: Bootstrap Terraform state resources
+        if: steps.secrets_check.outputs.ready == 'true'
         shell: bash
         run: |
           if ! aws s3api head-bucket --bucket "$TF_STATE_BUCKET" 2>/dev/null; then
@@ -88,11 +118,13 @@ jobs:
           fi
 
       - name: Write Terraform variables
+        if: steps.secrets_check.outputs.ready == 'true'
         shell: bash
         run: |
           printf '%s\n' "$TF_VARS_CONTENT" > infrastructure/terraform/terraform.auto.tfvars
 
       - name: Terraform Init
+        if: steps.secrets_check.outputs.ready == 'true'
         run: |
           terraform -chdir=infrastructure/terraform init \
             -backend-config="bucket=${TF_STATE_BUCKET}" \
@@ -102,24 +134,27 @@ jobs:
             -backend-config="encrypt=true"
 
       - name: Terraform Fmt
+        if: steps.secrets_check.outputs.ready == 'true'
         run: terraform -chdir=infrastructure/terraform fmt -check -recursive
 
       - name: Terraform Validate
+        if: steps.secrets_check.outputs.ready == 'true'
         run: terraform -chdir=infrastructure/terraform validate
 
       - name: Terraform Plan
+        if: steps.secrets_check.outputs.ready == 'true'
         run: terraform -chdir=infrastructure/terraform plan -out=tfplan
 
       - name: Terraform Apply on Push
-        if: github.event_name == 'push'
+        if: steps.secrets_check.outputs.ready == 'true' && github.event_name == 'push'
         run: terraform -chdir=infrastructure/terraform apply -auto-approve tfplan
 
       - name: Terraform Apply on Manual Trigger
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'apply'
+        if: steps.secrets_check.outputs.ready == 'true' && github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'apply'
         run: terraform -chdir=infrastructure/terraform apply -auto-approve tfplan
 
       - name: Publish Outputs Summary
-        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'apply')
+        if: steps.secrets_check.outputs.ready == 'true' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'apply'))
         shell: bash
         run: |
           {
