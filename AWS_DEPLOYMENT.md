@@ -25,7 +25,6 @@ Update these placeholders with your real values:
 
 - `infrastructure/terraform/terraform.tfvars.pvi-draft.example`
   - `REPLACE_GITHUB_ORG/REPLACE_REPO`
-  - `REPLACE_UNIQUE_SUFFIX` (for all S3 bucket names)
   - `REPLACE_EC2_KEYPAIR_NAME`
   - `REPLACE_YOUR_PUBLIC_IP/32`
   - `REPLACE_WITH_STRONG_DB_PASSWORD`
@@ -107,7 +106,12 @@ The workflow automatically:
 From `infrastructure/terraform`:
 
 ```bash
-terraform init
+terraform init \
+  -backend-config="bucket=<your-tf-state-bucket>" \
+  -backend-config="key=<path/to/terraform.tfstate>" \
+  -backend-config="region=<aws-region>" \
+  -backend-config="dynamodb_table=<your-lock-table>" \
+  -backend-config="encrypt=true"
 copy terraform.tfvars.pvi-draft.example terraform.tfvars
 terraform plan
 terraform apply
@@ -115,7 +119,7 @@ terraform apply
 
 Fill `terraform.tfvars` carefully:
 
-- domain + bucket names (globally unique)
+- domain + bucket names
   - set `domain_name` to apex only (for your case: `pviengineers.com`, not `www.pviengineers.com`)
 - DB password
 - JWT secret

@@ -39,7 +39,12 @@ This Terraform stack provisions the complete production-grade AWS setup requeste
 3. Run:
 
 ```bash
-terraform init
+terraform init \
+  -backend-config="bucket=<your-tf-state-bucket>" \
+  -backend-config="key=<path/to/terraform.tfstate>" \
+  -backend-config="region=<aws-region>" \
+  -backend-config="dynamodb_table=<your-lock-table>" \
+  -backend-config="encrypt=true"
 terraform plan
 terraform apply
 ```

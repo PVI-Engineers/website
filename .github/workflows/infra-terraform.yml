@@ -117,11 +117,7 @@ jobs:
               --billing-mode PAY_PER_REQUEST
           fi
 
-      - name: Write Terraform variables
-        if: steps.secrets_check.outputs.ready == 'true'
-        shell: bash
-        run: |
-          printf '%s\n' "$TF_VARS_CONTENT" > infrastructure/terraform/terraform.auto.tfvars
+          aws dynamodb wait table-exists --table-name "$TF_LOCK_TABLE"
 
       - name: Terraform Init
         if: steps.secrets_check.outputs.ready == 'true'
@@ -141,9 +137,17 @@ jobs:
         if: steps.secrets_check.outputs.ready == 'true'
         run: terraform -chdir=infrastructure/terraform validate
 
+      - name: Write Terraform variables
+        if: steps.secrets_check.outputs.ready == 'true'
+        shell: bash
+        run: |
+          TF_VARS_FILE="${RUNNER_TEMP}/terraform.auto.tfvars"
+          printf '%s\n' "$TF_VARS_CONTENT" > "$TF_VARS_FILE"
+          echo "TF_VARS_FILE=$TF_VARS_FILE" >> "$GITHUB_ENV"
+
       - name: Terraform Plan
         if: steps.secrets_check.outputs.ready == 'true'
-        run: terraform -chdir=infrastructure/terraform plan -out=tfplan
+        run: terraform -chdir=infrastructure/terraform plan -var-file="${TF_VARS_FILE}" -out=tfplan
 
       - name: Terraform Apply on Push
         if: steps.secrets_check.outputs.ready == 'true' && github.event_name == 'push'
