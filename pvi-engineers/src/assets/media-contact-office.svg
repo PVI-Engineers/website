@@ -1,0 +1,16 @@
+<svg width="1200" height="700" viewBox="0 0 1200 700" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="co-bg" x1="102" y1="70" x2="1110" y2="620" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#17446F" />
+      <stop offset="1" stop-color="#0A2239" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="700" rx="28" fill="url(#co-bg)" />
+  <circle cx="1034" cy="112" r="138" fill="#87B6FF" fill-opacity="0.24" />
+  <rect x="170" y="196" width="860" height="392" rx="24" fill="#0D2C4A" fill-opacity="0.7" />
+  <rect x="240" y="266" width="280" height="252" rx="18" fill="#93BFE6" fill-opacity="0.68" />
+  <rect x="562" y="266" width="396" height="112" rx="16" fill="#A6D9FF" fill-opacity="0.74" />
+  <rect x="562" y="406" width="396" height="112" rx="16" fill="#7DB6DF" fill-opacity="0.72" />
+  <path d="M600 320L755 408L908 320" stroke="#2D6698" stroke-width="14" stroke-linecap="round" />
+  <text x="96" y="102" fill="#EBF7FF" font-size="36" font-family="Segoe UI, Arial, sans-serif" font-weight="700">Contact & Project Enquiries</text>
+</svg>

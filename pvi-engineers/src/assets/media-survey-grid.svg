@@ -1,0 +1,18 @@
+<svg width="1200" height="700" viewBox="0 0 1200 700" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="s-bg" x1="100" y1="70" x2="1080" y2="620" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#12385D" />
+      <stop offset="1" stop-color="#0C223A" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="700" rx="28" fill="url(#s-bg)" />
+  <rect x="128" y="120" width="944" height="470" rx="20" fill="#0D2D50" fill-opacity="0.54" />
+  <path d="M128 182H1072M128 244H1072M128 306H1072M128 368H1072M128 430H1072M128 492H1072M128 554H1072" stroke="#7FC4FF" stroke-opacity="0.25" stroke-width="2" />
+  <path d="M196 120V590M264 120V590M332 120V590M400 120V590M468 120V590M536 120V590M604 120V590M672 120V590M740 120V590M808 120V590M876 120V590M944 120V590M1012 120V590" stroke="#78D9CF" stroke-opacity="0.22" stroke-width="2" />
+  <circle cx="290" cy="430" r="14" fill="#8CE3FF" />
+  <circle cx="522" cy="318" r="14" fill="#8CE3FF" />
+  <circle cx="766" cy="256" r="14" fill="#8CE3FF" />
+  <circle cx="888" cy="446" r="14" fill="#8CE3FF" />
+  <path d="M290 430L522 318L766 256L888 446" stroke="#C8ECFF" stroke-opacity="0.72" stroke-width="4" />
+  <text x="96" y="104" fill="#EAF6FF" font-size="36" font-family="Segoe UI, Arial, sans-serif" font-weight="700">Survey & Geospatial Analytics</text>
+</svg>

@@ -1,0 +1,185 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --site-text: #111827;
+  --site-bg: radial-gradient(circle at 20% 12%, #d6ebff 0%, #edf6ff 38%, #ffffff 100%);
+  --site-grid-line: rgba(68, 136, 205, 0.16);
+  --site-overlay-glow: radial-gradient(circle at 85% 18%, rgba(90, 182, 255, 0.3), transparent 34%),
+    radial-gradient(circle at 12% 72%, rgba(82, 208, 255, 0.22), transparent 32%);
+
+  --top-bar-bg: rgba(255, 255, 255, 0.86);
+  --top-bar-border: rgba(91, 154, 222, 0.26);
+  --brand-mark-gradient: linear-gradient(135deg, #9fd9ff, #d8f0ff);
+  --brand-mark-text: #063967;
+  --brand-title: #0f172a;
+  --brand-subtitle: rgba(15, 23, 42, 0.74);
+  --drawer-bg: rgba(244, 250, 255, 0.96);
+
+  --mega-bg: linear-gradient(150deg, rgba(255, 255, 255, 0.97) 0%, rgba(240, 249, 255, 0.97) 100%);
+  --mega-border: rgba(117, 183, 246, 0.36);
+  --mega-overview-bg: linear-gradient(165deg, rgba(115, 195, 255, 0.18) 0%, rgba(101, 148, 255, 0.14) 100%);
+  --mega-overview-border: rgba(118, 183, 246, 0.32);
+  --mega-title: #0f172a;
+  --mega-copy: rgba(15, 23, 42, 0.84);
+  --mega-mini: #0f7dcf;
+  --mega-bullet: rgba(15, 23, 42, 0.84);
+  --mega-links-bg: rgba(237, 247, 255, 0.74);
+  --mega-link-card-bg: rgba(255, 255, 255, 0.82);
+  --mega-link-card-border: rgba(109, 176, 240, 0.34);
+  --mega-link-card-hover-border: rgba(79, 156, 230, 0.52);
+  --mega-link-icon-bg: rgba(99, 181, 255, 0.22);
+  --mega-link-title: #0f172a;
+  --mega-link-copy: rgba(15, 23, 42, 0.78);
+
+  --footer-bg: rgba(239, 247, 255, 0.95);
+  --footer-border: rgba(99, 166, 231, 0.24);
+  --footer-title: #0f172a;
+  --footer-subtitle: #1f2937;
+  --footer-copy: rgba(15, 23, 42, 0.82);
+  --footer-link: rgba(15, 23, 42, 0.9);
+  --footer-link-hover: #0b75c6;
+  --footer-meta: rgba(31, 41, 55, 0.76);
+  --footer-policy: #0b7fce;
+
+  --text-kicker: #0d6bc0;
+  --text-title: #0b1320;
+  --text-copy: rgba(15, 23, 42, 0.82);
+  --surface-card-bg: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(243, 249, 255, 0.92) 55%,
+    rgba(236, 246, 255, 0.9) 100%
+  );
+  --surface-card-border: rgba(110, 180, 245, 0.3);
+  --text-card-title: #0b1320;
+  --text-card-copy: rgba(15, 23, 42, 0.8);
+  --text-path: rgba(15, 23, 42, 0.72);
+  --hero-visual-bg: linear-gradient(145deg, rgba(246, 251, 255, 0.97) 0%, rgba(230, 242, 255, 0.93) 100%);
+  --hero-visual-border: rgba(118, 182, 244, 0.38);
+  --home-gradient-text: linear-gradient(90deg, #0e73c7 0%, #1d9fd7 55%, #4f6ed6 100%);
+  --ambient-orb-one: #67b8ff;
+  --ambient-orb-two: #8fa4ff;
+  --ambient-orb-three: #75e7cf;
+  --ambient-orb-opacity: 0.14;
+  --visual-icon-color: #032a4e;
+  --visual-icon-shadow: 0 8px 26px rgba(38, 142, 219, 0.28);
+}
+
+body[data-site-theme='dark'] {
+  --site-text: #eaf4ff;
+  --site-bg: radial-gradient(circle at 20% 15%, #0f2d5e 0%, #060d22 32%, #040912 66%, #03060d 100%);
+  --site-grid-line: rgba(80, 140, 230, 0.08);
+  --site-overlay-glow: radial-gradient(circle at 85% 20%, rgba(38, 134, 255, 0.2), transparent 33%),
+    radial-gradient(circle at 15% 70%, rgba(40, 227, 198, 0.16), transparent 30%);
+
+  --top-bar-bg: rgba(5, 8, 22, 0.76);
+  --top-bar-border: rgba(93, 214, 255, 0.14);
+  --brand-mark-gradient: linear-gradient(135deg, #5dd6ff, #9bfbe7);
+  --brand-mark-text: #04152f;
+  --brand-title: #e8f3ff;
+  --brand-subtitle: rgba(218, 233, 255, 0.7);
+  --drawer-bg: rgba(8, 15, 35, 0.96);
+
+  --mega-bg: linear-gradient(155deg, rgba(9, 18, 42, 0.98) 0%, rgba(8, 15, 35, 0.97) 48%, rgba(7, 12, 28, 0.98) 100%);
+  --mega-border: rgba(110, 182, 255, 0.22);
+  --mega-overview-bg: linear-gradient(165deg, rgba(74, 185, 255, 0.12) 0%, rgba(83, 104, 255, 0.08) 100%);
+  --mega-overview-border: rgba(108, 176, 244, 0.2);
+  --mega-title: #edf7ff;
+  --mega-copy: rgba(197, 225, 255, 0.8);
+  --mega-mini: rgba(150, 228, 255, 0.88);
+  --mega-bullet: rgba(204, 229, 254, 0.78);
+  --mega-links-bg: rgba(5, 10, 25, 0.5);
+  --mega-link-card-bg: rgba(8, 16, 37, 0.62);
+  --mega-link-card-border: rgba(104, 171, 243, 0.18);
+  --mega-link-card-hover-border: rgba(135, 218, 255, 0.38);
+  --mega-link-icon-bg: rgba(102, 185, 255, 0.15);
+  --mega-link-title: #ebf6ff;
+  --mega-link-copy: rgba(188, 220, 252, 0.7);
+
+  --footer-bg: rgba(6, 11, 28, 0.82);
+  --footer-border: rgba(93, 214, 255, 0.14);
+  --footer-title: #ecf6ff;
+  --footer-subtitle: #dcecff;
+  --footer-copy: rgba(219, 232, 255, 0.72);
+  --footer-link: rgba(200, 229, 255, 0.82);
+  --footer-link-hover: #9be9ff;
+  --footer-meta: rgba(192, 216, 245, 0.62);
+  --footer-policy: #9ee8ff;
+
+  --text-kicker: #80e8dc;
+  --text-title: #edf6ff;
+  --text-copy: rgba(205, 228, 252, 0.78);
+  --surface-card-bg: linear-gradient(
+    150deg,
+    rgba(15, 26, 55, 0.82) 0%,
+    rgba(10, 18, 40, 0.8) 52%,
+    rgba(7, 12, 29, 0.8) 100%
+  );
+  --surface-card-border: rgba(120, 186, 255, 0.15);
+  --text-card-title: #edf7ff;
+  --text-card-copy: rgba(201, 223, 248, 0.76);
+  --text-path: rgba(154, 193, 228, 0.66);
+  --hero-visual-bg: linear-gradient(145deg, rgba(8, 14, 34, 0.96) 0%, rgba(7, 13, 30, 0.92) 100%);
+  --hero-visual-border: rgba(121, 188, 255, 0.2);
+  --home-gradient-text: linear-gradient(90deg, #63dbff 0%, #8ff7d8 55%, #a28aff 100%);
+  --ambient-orb-one: #3aa7ff;
+  --ambient-orb-two: #6a5cff;
+  --ambient-orb-three: #2de0a6;
+  --ambient-orb-opacity: 0.2;
+  --visual-icon-color: #05223d;
+  --visual-icon-shadow: 0 8px 26px rgba(69, 178, 255, 0.3);
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, 'Segoe UI', Roboto, Arial, sans-serif;
+  color: var(--site-text);
+  background: var(--site-bg);
+}
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+body::before {
+  background-image: linear-gradient(var(--site-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--site-grid-line) 1px, transparent 1px);
+  background-size: 58px 58px;
+  opacity: 0.24;
+}
+
+body::after {
+  background: var(--site-overlay-glow);
+}
+
+a {
+  color: inherit;
+}
+
+.v-application {
+  background: transparent !important;
+}
+
+body:not([data-site-theme='dark']) .v-chip.v-chip--variant-tonal .v-chip__content {
+  color: #0f2d4a;
+  font-weight: 600;
+}

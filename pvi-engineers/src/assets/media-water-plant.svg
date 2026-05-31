@@ -1,0 +1,18 @@
+<svg width="1200" height="700" viewBox="0 0 1200 700" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="w-bg" x1="96" y1="68" x2="1110" y2="628" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F3E6A" />
+      <stop offset="1" stop-color="#0A223B" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="700" rx="28" fill="url(#w-bg)" />
+  <circle cx="975" cy="120" r="152" fill="#74B9FF" fill-opacity="0.25" />
+  <rect x="110" y="372" width="980" height="210" rx="28" fill="#0A2A4C" fill-opacity="0.74" />
+  <rect x="158" y="298" width="138" height="186" rx="14" fill="#93C9F7" fill-opacity="0.76" />
+  <rect x="328" y="260" width="184" height="224" rx="18" fill="#8CBEEA" fill-opacity="0.72" />
+  <rect x="542" y="322" width="128" height="162" rx="14" fill="#A0D9F8" fill-opacity="0.68" />
+  <circle cx="788" cy="425" r="86" fill="#68B9DF" fill-opacity="0.52" />
+  <circle cx="965" cy="425" r="86" fill="#68B9DF" fill-opacity="0.52" />
+  <path d="M144 540C242 512 332 572 418 540C500 510 583 572 664 540C754 502 835 576 925 540C980 518 1038 528 1090 540" stroke="#99EEEA" stroke-opacity="0.74" stroke-width="10" stroke-linecap="round" />
+  <text x="92" y="102" fill="#ECF8FF" font-size="36" font-family="Segoe UI, Arial, sans-serif" font-weight="700">Water & Wastewater Engineering</text>
+</svg>

@@ -1,0 +1,155 @@
+#!/bin/bash
+set -euxo pipefail
+
+yum update -y
+yum install -y java-17-amazon-corretto-headless nginx amazon-cloudwatch-agent awscli
+
+mkdir -p /opt/pvi
+touch /var/log/pvi-backend.log
+chown ec2-user:ec2-user /var/log/pvi-backend.log
+
+cat > /opt/pvi/application.env <<'EOF'
+SPRING_DATASOURCE_URL=jdbc:postgresql://${db_host}:${db_port}/${db_name}
+SPRING_DATASOURCE_USERNAME=${db_username}
+SPRING_DATASOURCE_PASSWORD=${db_password}
+
+APP_MAIL_PROVIDER=ses
+APP_MAIL_SES_REGION=${ses_region}
+MAIL_FROM=${mail_from_address}
+COMPANY_MAIL_TO=${company_mail_to}
+
+APP_STORAGE_PROVIDER=s3
+APP_STORAGE_S3_BUCKET=${resume_bucket_name}
+APP_STORAGE_S3_REGION=${aws_region}
+APP_STORAGE_S3_KEY_PREFIX=resumes
+
+FRONTEND_URLS=${frontend_urls_csv}
+APP_JWT_SECRET=${jwt_secret}
+APP_JWT_EXPIRATION_MS=86400000
+
+APP_BOOTSTRAP_ADMIN_USERNAME=${bootstrap_admin_username}
+APP_BOOTSTRAP_ADMIN_PASSWORD=${bootstrap_admin_password}
+APP_BOOTSTRAP_ADMIN_FULL_NAME=${bootstrap_admin_full_name}
+APP_BOOTSTRAP_ADMIN_EMAIL=${bootstrap_admin_email}
+
+APP_BOOTSTRAP_HR_USERNAME=${bootstrap_hr_username}
+APP_BOOTSTRAP_HR_PASSWORD=${bootstrap_hr_password}
+APP_BOOTSTRAP_HR_FULL_NAME=${bootstrap_hr_full_name}
+APP_BOOTSTRAP_HR_EMAIL=${bootstrap_hr_email}
+
+APP_BOOTSTRAP_EMPLOYEE_USERNAME=${bootstrap_employee_username}
+APP_BOOTSTRAP_EMPLOYEE_PASSWORD=${bootstrap_employee_password}
+APP_BOOTSTRAP_EMPLOYEE_FULL_NAME=${bootstrap_employee_full_name}
+APP_BOOTSTRAP_EMPLOYEE_EMAIL=${bootstrap_employee_email}
+
+SERVER_PORT=8080
+EOF
+
+cat > /etc/systemd/system/pvi-careers-api.service <<'EOF'
+[Unit]
+Description=PVI Careers Spring Boot API
+After=network.target
+ConditionPathExists=/opt/pvi/pvi-careers-api.jar
+
+[Service]
+User=ec2-user
+Group=ec2-user
+WorkingDirectory=/opt/pvi
+EnvironmentFile=/opt/pvi/application.env
+Environment=JAVA_OPTS=-Xms128m -Xmx512m
+ExecStart=/bin/bash -c '/usr/bin/java $JAVA_OPTS -jar /opt/pvi/pvi-careers-api.jar'
+StandardOutput=append:/var/log/pvi-backend.log
+StandardError=append:/var/log/pvi-backend.log
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+cat > /etc/nginx/conf.d/pvi-api.conf <<'EOF'
+limit_req_zone $binary_remote_addr zone=api_rate:10m rate=20r/s;
+
+server {
+    listen 80;
+    server_name _;
+    server_tokens off;
+    client_max_body_size 10m;
+
+    location /api/ {
+        limit_req zone=api_rate burst=40 nodelay;
+        proxy_pass http://127.0.0.1:8080/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        return 404;
+    }
+}
+EOF
+
+cat > /usr/local/bin/deploy-backend.sh <<'EOF'
+#!/bin/bash
+set -euxo pipefail
+BUCKET="$1"
+OBJECT_KEY="$${2:-backend/pvi-careers-api.jar}"
+EXPECTED_SHA256="$${3:-}"
+
+aws s3 cp "s3://$${BUCKET}/$${OBJECT_KEY}" /opt/pvi/pvi-careers-api.jar
+chown ec2-user:ec2-user /opt/pvi/pvi-careers-api.jar
+
+if [ -n "$${EXPECTED_SHA256}" ]; then
+  ACTUAL_SHA256=$(sha256sum /opt/pvi/pvi-careers-api.jar | awk '{print $1}')
+  if [ "$${ACTUAL_SHA256}" != "$${EXPECTED_SHA256}" ]; then
+    echo "Checksum validation failed for backend artifact."
+    exit 1
+  fi
+fi
+
+systemctl daemon-reload
+systemctl enable pvi-careers-api
+systemctl restart pvi-careers-api
+EOF
+chmod +x /usr/local/bin/deploy-backend.sh
+
+cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'EOF'
+{
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/var/log/pvi-backend.log",
+            "log_group_name": "${cloudwatch_log_group_backend}",
+            "log_stream_name": "{instance_id}"
+          },
+          {
+            "file_path": "/var/log/nginx/access.log",
+            "log_group_name": "${cloudwatch_log_group_nginx}",
+            "log_stream_name": "{instance_id}/access"
+          },
+          {
+            "file_path": "/var/log/nginx/error.log",
+            "log_group_name": "${cloudwatch_log_group_nginx}",
+            "log_stream_name": "{instance_id}/error"
+          }
+        ]
+      }
+    }
+  }
+}
+EOF
+
+systemctl daemon-reload
+systemctl enable nginx
+systemctl restart nginx
+
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+  -a fetch-config \
+  -m ec2 \
+  -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json \
+  -s

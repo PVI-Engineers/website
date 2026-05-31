@@ -1,0 +1,19 @@
+<svg width="1200" height="700" viewBox="0 0 1200 700" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="t-bg" x1="110" y1="66" x2="1094" y2="632" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#143D69" />
+      <stop offset="1" stop-color="#0A2037" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="700" rx="28" fill="url(#t-bg)" />
+  <rect x="98" y="144" width="1004" height="470" rx="24" fill="#0D2A47" fill-opacity="0.7" />
+  <circle cx="324" cy="408" r="70" fill="#9DD8FF" fill-opacity="0.78" />
+  <rect x="278" y="474" width="94" height="96" rx="24" fill="#88C1ED" fill-opacity="0.76" />
+  <circle cx="540" cy="378" r="64" fill="#8BD3FF" fill-opacity="0.76" />
+  <rect x="498" y="438" width="84" height="120" rx="26" fill="#7AB2DF" fill-opacity="0.74" />
+  <circle cx="742" cy="408" r="70" fill="#9DD8FF" fill-opacity="0.78" />
+  <rect x="696" y="474" width="94" height="96" rx="24" fill="#88C1ED" fill-opacity="0.76" />
+  <circle cx="930" cy="384" r="58" fill="#7CC6F4" fill-opacity="0.8" />
+  <rect x="894" y="438" width="74" height="108" rx="24" fill="#6DA9D8" fill-opacity="0.72" />
+  <text x="96" y="104" fill="#EBF7FF" font-size="36" font-family="Segoe UI, Arial, sans-serif" font-weight="700">Team, Careers & Company Culture</text>
+</svg>

@@ -1,0 +1,77 @@
+spring:
+  application:
+    name: pvi-careers-api
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/pvi_careers}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+  servlet:
+    multipart:
+      max-file-size: ${APP_MAX_FILE_SIZE:5MB}
+      max-request-size: ${APP_MAX_REQUEST_SIZE:10MB}
+
+server:
+  port: ${SERVER_PORT:8080}
+  forward-headers-strategy: framework
+
+app:
+  frontend-urls: ${FRONTEND_URLS:http://localhost:5173}
+  mail:
+    provider: ${APP_MAIL_PROVIDER:smtp}
+    company-address: ${COMPANY_MAIL_TO:hr@pviengineers.com}
+    from-address: ${MAIL_FROM:}
+    ses:
+      region: ${APP_MAIL_SES_REGION:${AWS_REGION:us-west-2}}
+  storage:
+    provider: ${APP_STORAGE_PROVIDER:s3}
+    s3:
+      bucket: ${APP_STORAGE_S3_BUCKET:}
+      region: ${APP_STORAGE_S3_REGION:${AWS_REGION:us-west-2}}
+      key-prefix: ${APP_STORAGE_S3_KEY_PREFIX:resumes}
+      presign-expiration-seconds: ${APP_STORAGE_S3_PRESIGN_EXPIRATION_SECONDS:900}
+  security:
+    jwt-secret: ${APP_JWT_SECRET:ThisIsAVeryLongDevelopmentJwtSecretForPviCareersPortal123456}
+    jwt-expiration-ms: ${APP_JWT_EXPIRATION_MS:86400000}
+    rate-limit:
+      enabled: ${APP_RATE_LIMIT_ENABLED:true}
+      login-per-minute: ${APP_RATE_LIMIT_LOGIN_PER_MINUTE:12}
+      presign-per-minute: ${APP_RATE_LIMIT_PRESIGN_PER_MINUTE:40}
+      application-submit-per-minute: ${APP_RATE_LIMIT_APPLICATION_SUBMIT_PER_MINUTE:20}
+      health-per-minute: ${APP_RATE_LIMIT_HEALTH_PER_MINUTE:120}
+  bootstrap:
+    admin:
+      username: ${APP_BOOTSTRAP_ADMIN_USERNAME:admin@pvi.local}
+      password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:Admin@123}
+      full-name: ${APP_BOOTSTRAP_ADMIN_FULL_NAME:PVI Admin}
+      email: ${APP_BOOTSTRAP_ADMIN_EMAIL:admin@pviengineers.com}
+    hr:
+      username: ${APP_BOOTSTRAP_HR_USERNAME:hr@pvi.local}
+      password: ${APP_BOOTSTRAP_HR_PASSWORD:Hr@123}
+      full-name: ${APP_BOOTSTRAP_HR_FULL_NAME:PVI HR}
+      email: ${APP_BOOTSTRAP_HR_EMAIL:hr@pviengineers.com}
+    employee:
+      username: ${APP_BOOTSTRAP_EMPLOYEE_USERNAME:employee@pvi.local}
+      password: ${APP_BOOTSTRAP_EMPLOYEE_PASSWORD:Employee@123}
+      full-name: ${APP_BOOTSTRAP_EMPLOYEE_FULL_NAME:PVI Employee}
+      email: ${APP_BOOTSTRAP_EMPLOYEE_EMAIL:employee@pviengineers.com}

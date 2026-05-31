@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: pvi-careers-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pvi_careers
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pvi-careers-db:/var/lib/postgresql/data
+
+volumes:
+  pvi-careers-db:

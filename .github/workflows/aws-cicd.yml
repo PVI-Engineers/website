@@ -1,0 +1,110 @@
+name: aws-cicd
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pvi-engineers/**"
+      - "pvi-careers-api/**"
+      - ".github/workflows/aws-cicd.yml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: aws-cicd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ROLE_TO_ASSUME_APP: ${{ secrets.AWS_ROLE_TO_ASSUME_APP }}
+      FRONTEND_BUCKET: ${{ secrets.FRONTEND_BUCKET }}
+      ARTIFACT_BUCKET: ${{ secrets.ARTIFACT_BUCKET }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+      EC2_INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Validate required secrets
+        run: |
+          test -n "$AWS_REGION" || (echo "Missing AWS_REGION secret" && exit 1)
+          test -n "$FRONTEND_BUCKET" || (echo "Missing FRONTEND_BUCKET secret" && exit 1)
+          test -n "$ARTIFACT_BUCKET" || (echo "Missing ARTIFACT_BUCKET secret" && exit 1)
+          test -n "$CLOUDFRONT_DISTRIBUTION_ID" || (echo "Missing CLOUDFRONT_DISTRIBUTION_ID secret" && exit 1)
+          test -n "$EC2_INSTANCE_ID" || (echo "Missing EC2_INSTANCE_ID secret" && exit 1)
+          test -n "$AWS_ROLE_TO_ASSUME_APP" || (echo "Missing AWS_ROLE_TO_ASSUME_APP secret" && exit 1)
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Install frontend deps
+        working-directory: pvi-engineers
+        run: npm ci
+
+      - name: Audit frontend production dependencies
+        working-directory: pvi-engineers
+        continue-on-error: true
+        run: npm audit --omit=dev --audit-level=critical
+
+      - name: Build frontend
+        working-directory: pvi-engineers
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: ""
+
+      - name: Build backend
+        working-directory: pvi-careers-api
+        run: mvn -B -DskipTests package
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_APP }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Upload frontend to S3
+        run: aws s3 sync pvi-engineers/dist "s3://${FRONTEND_BUCKET}" --delete
+
+      - name: Invalidate CloudFront cache
+        run: aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*"
+
+      - name: Upload backend artifact to S3
+        run: |
+          BACKEND_SHA256=$(sha256sum pvi-careers-api/target/pvi-careers-api-0.0.1-SNAPSHOT.jar | awk '{print $1}')
+          echo "BACKEND_SHA256=$BACKEND_SHA256" >> "$GITHUB_ENV"
+          aws s3 cp \
+            pvi-careers-api/target/pvi-careers-api-0.0.1-SNAPSHOT.jar \
+            "s3://${ARTIFACT_BUCKET}/backend/pvi-careers-api.jar"
+
+      - name: Deploy backend to EC2 using SSM
+        run: |
+          COMMAND_ID=$(aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --instance-ids "$EC2_INSTANCE_ID" \
+            --parameters commands="set -euo pipefail; aws s3 cp s3://${ARTIFACT_BUCKET}/backend/pvi-careers-api.jar /opt/pvi/pvi-careers-api.jar; echo '${BACKEND_SHA256}  /opt/pvi/pvi-careers-api.jar' | sha256sum -c -; sudo chown ec2-user:ec2-user /opt/pvi/pvi-careers-api.jar; sudo systemctl daemon-reload; sudo systemctl enable pvi-careers-api; sudo systemctl restart pvi-careers-api" \
+            --query "Command.CommandId" \
+            --output text)
+
+          aws ssm wait command-executed \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$EC2_INSTANCE_ID"

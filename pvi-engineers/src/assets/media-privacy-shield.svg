@@ -1,0 +1,15 @@
+<svg width="1200" height="700" viewBox="0 0 1200 700" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="p-bg" x1="98" y1="62" x2="1106" y2="628" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#173E67" />
+      <stop offset="1" stop-color="#0A2036" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="700" rx="28" fill="url(#p-bg)" />
+  <circle cx="966" cy="112" r="142" fill="#7FAFFF" fill-opacity="0.22" />
+  <path d="M600 162L864 248V410C864 498 807 576 720 614L600 666L480 614C393 576 336 498 336 410V248L600 162Z" fill="#9BC9F3" fill-opacity="0.7" />
+  <path d="M600 236L782 296V414C782 472 747 522 692 549L600 592L508 549C453 522 418 472 418 414V296L600 236Z" fill="#0E365B" fill-opacity="0.86" />
+  <rect x="548" y="352" width="104" height="120" rx="16" fill="#9DD8FF" fill-opacity="0.84" />
+  <path d="M524 354C524 314 558 282 600 282C642 282 676 314 676 354V390H644V354C644 331 625 312 600 312C575 312 556 331 556 354V390H524V354Z" fill="#9DD8FF" fill-opacity="0.84" />
+  <text x="94" y="102" fill="#ECF8FF" font-size="36" font-family="Segoe UI, Arial, sans-serif" font-weight="700">Privacy, Data & Compliance</text>
+</svg>

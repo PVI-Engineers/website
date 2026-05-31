@@ -1,0 +1,22 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="120" y1="80" x2="1490" y2="840" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B2E60" />
+      <stop offset="1" stop-color="#07182F" />
+    </linearGradient>
+    <linearGradient id="road" x1="190" y1="720" x2="1240" y2="180" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7FD5FF" stop-opacity="0.2" />
+      <stop offset="1" stop-color="#8BE9D9" stop-opacity="0.58" />
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" rx="34" fill="url(#bg)" />
+  <circle cx="1350" cy="130" r="200" fill="#4F7FFF" fill-opacity="0.22" />
+  <circle cx="220" cy="790" r="250" fill="#2BCFA9" fill-opacity="0.2" />
+  <path d="M120 795C350 700 575 530 770 430C935 345 1170 245 1485 145" stroke="url(#road)" stroke-width="120" stroke-linecap="round" />
+  <path d="M175 750C415 645 620 508 810 390C968 294 1165 215 1470 118" stroke="#A2D6FF" stroke-opacity="0.72" stroke-width="14" stroke-linecap="round" stroke-dasharray="8 18" />
+  <path d="M160 618C260 622 345 600 432 548C537 487 610 436 720 404C845 367 938 391 1035 336C1124 286 1230 240 1452 223" stroke="#77DDFF" stroke-opacity="0.34" stroke-width="34" stroke-linecap="round" />
+  <path d="M90 430C230 390 332 420 445 490C560 562 676 577 792 532C910 486 1038 482 1208 565C1328 625 1430 650 1520 618" stroke="#6FD3C2" stroke-opacity="0.25" stroke-width="18" stroke-linecap="round" />
+  <rect x="78" y="80" width="540" height="138" rx="22" fill="#041936" fill-opacity="0.62" />
+  <text x="112" y="140" fill="#E8F5FF" font-size="44" font-family="Segoe UI, Arial, sans-serif" font-weight="700">PVI ENGINEERS</text>
+  <text x="112" y="186" fill="#A6C9E8" font-size="26" font-family="Segoe UI, Arial, sans-serif">Road " Water " Drainage Infrastructure</text>
+</svg>

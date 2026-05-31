@@ -1,0 +1,62 @@
+# Copy this file to terraform.tfvars and update all REPLACE_* values.
+
+aws_region   = "us-west-2"
+project_name = "pvi"
+environment  = "prod"
+
+# Set to your GitHub repo (owner/repo) so Terraform creates OIDC deploy role.
+github_repository = "PVI-Engineers/website"
+github_branch     = "main"
+
+# Use apex domain only (no www prefix).
+domain_name    = "pviengineers.com"
+hosted_zone_id = ""
+api_subdomain  = "api"
+
+# Bucket names must be globally unique, lowercase, and hyphen-separated.
+frontend_bucket_name  = "pvi-prod-frontend-REPLACE_UNIQUE_SUFFIX"
+resume_bucket_name    = "pvi-prod-resumes-REPLACE_UNIQUE_SUFFIX"
+artifacts_bucket_name = "pvi-prod-artifacts-REPLACE_UNIQUE_SUFFIX"
+
+# Optional: leave empty if you do not use SSH keypair login.
+key_pair_name       = "REPLACE_EC2_KEYPAIR_NAME"
+admin_ingress_cidr  = "REPLACE_YOUR_PUBLIC_IP/32"
+enable_ssh_ingress  = true
+instance_type       = "t2.micro"
+db_instance_class   = "db.t3.micro"
+db_allocated_storage = 20
+
+db_name     = "pvi_careers"
+db_username = "pvi_admin"
+db_password = "REPLACE_WITH_STRONG_DB_PASSWORD"
+
+mail_from_address = "no-reply@pviengineers.com"
+company_mail_to   = "hr@pviengineers.com"
+ses_region        = "us-west-2"
+
+jwt_secret = "REPLACE_WITH_LONG_RANDOM_JWT_SECRET_MIN_32_CHARS"
+
+bootstrap_admin_username  = "admin@pvi.local"
+bootstrap_admin_password  = "REPLACE_ADMIN_PASSWORD"
+bootstrap_admin_full_name = "PVI Admin"
+bootstrap_admin_email     = "admin@pviengineers.com"
+
+bootstrap_hr_username  = "hr@pvi.local"
+bootstrap_hr_password  = "REPLACE_HR_PASSWORD"
+bootstrap_hr_full_name = "PVI HR"
+bootstrap_hr_email     = "hr@pviengineers.com"
+
+bootstrap_employee_username  = "employee@pvi.local"
+bootstrap_employee_password  = "REPLACE_EMPLOYEE_PASSWORD"
+bootstrap_employee_full_name = "PVI Employee"
+bootstrap_employee_email     = "employee@pviengineers.com"
+
+extra_frontend_urls = []
+
+alarm_email = "alerts@pviengineers.com"
+
+create_www_record         = true
+rds_skip_final_snapshot   = true
+rds_deletion_protection   = true
+enable_waf                = true
+waf_rate_limit            = 2000

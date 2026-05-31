@@ -1,0 +1,21 @@
+<svg width="1200" height="700" viewBox="0 0 1200 700" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="d-bg" x1="120" y1="66" x2="1090" y2="622" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#133A64" />
+      <stop offset="1" stop-color="#0B223B" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="700" rx="28" fill="url(#d-bg)" />
+  <rect x="0" y="505" width="1200" height="195" fill="#0A1E34" fill-opacity="0.88" />
+  <rect x="210" y="200" width="270" height="360" rx="16" fill="#CBE4FA" />
+  <rect x="254" y="256" width="182" height="12" rx="6" fill="#7EAACF" />
+  <rect x="254" y="288" width="182" height="12" rx="6" fill="#7EAACF" />
+  <rect x="254" y="320" width="140" height="12" rx="6" fill="#7EAACF" />
+  <rect x="520" y="150" width="320" height="400" rx="16" fill="#E2F2FF" />
+  <rect x="570" y="216" width="220" height="12" rx="6" fill="#86AFD1" />
+  <rect x="570" y="248" width="220" height="12" rx="6" fill="#86AFD1" />
+  <rect x="570" y="280" width="176" height="12" rx="6" fill="#86AFD1" />
+  <path d="M880 548L1040 242L1080 262L920 568L880 548Z" fill="#95C6F0" />
+  <circle cx="1060" cy="220" r="56" fill="#B9DFFF" />
+  <text x="92" y="98" fill="#EAF6FF" font-size="36" font-family="Segoe UI, Arial, sans-serif" font-weight="700">Bidding Documents & Technical Packs</text>
+</svg>
