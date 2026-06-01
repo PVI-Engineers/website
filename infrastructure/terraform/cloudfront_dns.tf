@@ -74,18 +74,15 @@ resource "aws_cloudfront_response_headers_policy" "security" {
       override                   = true
     }
 
+    content_security_policy {
+      content_security_policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+      override                = true
+    }
+
     xss_protection {
       protection = true
       mode_block = true
       override   = true
-    }
-  }
-
-  custom_headers_config {
-    items {
-      header   = "Content-Security-Policy"
-      override = true
-      value    = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
     }
   }
 }
