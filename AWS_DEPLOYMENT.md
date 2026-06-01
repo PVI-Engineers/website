@@ -121,6 +121,7 @@ Fill `terraform.tfvars` carefully:
 - domain + bucket names
   - set `domain_name` to apex only (for your case: `pviengineers.com`, not `www.pviengineers.com`)
 - DB password
+  - must be 8-128 printable ASCII chars and cannot include `/`, `@`, `"`, or spaces (AWS RDS restriction)
 - JWT secret
 - SES sender and company recipient email
 

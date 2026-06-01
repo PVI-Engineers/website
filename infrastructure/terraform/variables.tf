@@ -39,17 +39,17 @@ variable "api_subdomain" {
 }
 
 variable "frontend_bucket_name" {
-  description = "Globally unique S3 bucket name for static frontend hosting."
+  description = "S3 bucket name for static frontend hosting."
   type        = string
 }
 
 variable "resume_bucket_name" {
-  description = "Globally unique S3 bucket name for application resume storage."
+  description = "S3 bucket name for application resume storage."
   type        = string
 }
 
 variable "artifacts_bucket_name" {
-  description = "Globally unique S3 bucket name for CI/CD backend build artifacts."
+  description = "S3 bucket name for CI/CD backend build artifacts."
   type        = string
 }
 
@@ -117,6 +117,16 @@ variable "db_password" {
   description = "RDS PostgreSQL master password."
   type        = string
   sensitive   = true
+
+  validation {
+    condition = (
+      length(var.db_password) >= 8 &&
+      length(var.db_password) <= 128 &&
+      can(regex("^[!-~]+$", var.db_password)) &&
+      !can(regex("[/@\"]", var.db_password))
+    )
+    error_message = "db_password must be 8-128 printable ASCII characters and must not contain '/', '@', '\"', or spaces (AWS RDS restriction)."
+  }
 }
 
 variable "db_instance_class" {

@@ -34,6 +34,7 @@ This Terraform stack provisions the complete production-grade AWS setup requeste
    - or start from `terraform.tfvars.pvi-draft.example` (pre-filled for this project naming)
 2. Fill real values (`domain_name`, bucket names, DB password, JWT secret, etc.)
    - `domain_name` must be apex without `www` (example: `pviengineers.com`)
+   - `db_password` must be 8-128 printable ASCII chars and cannot include `/`, `@`, `"`, or spaces (AWS RDS rule)
    - Add any extra frontend origins (for staging/local) in `extra_frontend_urls` so S3 upload CORS allows them
    - Keep `enable_ssh_ingress=false` unless you need temporary SSH access
 3. Run:
