@@ -45,7 +45,6 @@ Update these placeholders with your real values:
   - `AWS_REGION`
   - `TF_STATE_BUCKET`
   - `TF_STATE_KEY`
-  - `TF_LOCK_TABLE`
   - `TF_VARS_CONTENT`
   - `FRONTEND_BUCKET`
   - `ARTIFACT_BUCKET`
@@ -85,7 +84,6 @@ Set these GitHub secrets first:
 - `AWS_REGION`
 - `TF_STATE_BUCKET`
 - `TF_STATE_KEY` (example: `pvi/prod/terraform.tfstate`)
-- `TF_LOCK_TABLE` (example: `pvi-prod-tf-locks`)
 - `TF_VARS_CONTENT` (full content of your `terraform.tfvars`)
 
 `AWS_ROLE_TO_ASSUME_INFRA` should be a high-privilege infra role (or admin role) that can create VPC, EC2, RDS, CloudFront, Route53, IAM, S3, SES, and CloudWatch resources.
@@ -97,9 +95,10 @@ Then trigger workflow:
 
 The workflow automatically:
 
-1. Creates/uses Terraform state bucket and lock table
-2. Runs `terraform init/plan/apply`
-3. Publishes key outputs in the workflow summary
+1. Creates/uses Terraform state bucket
+2. Uses S3 lockfile-based state locking
+3. Runs `terraform init/plan/apply`
+4. Publishes key outputs in the workflow summary
 
 ## 6) Optional Local Infra Deploy (if needed)
 
@@ -110,7 +109,7 @@ terraform init \
   -backend-config="bucket=<your-tf-state-bucket>" \
   -backend-config="key=<path/to/terraform.tfstate>" \
   -backend-config="region=<aws-region>" \
-  -backend-config="dynamodb_table=<your-lock-table>" \
+  -backend-config="use_lockfile=true" \
   -backend-config="encrypt=true"
 copy terraform.tfvars.pvi-draft.example terraform.tfvars
 terraform plan

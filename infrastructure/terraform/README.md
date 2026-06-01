@@ -43,7 +43,7 @@ terraform init \
   -backend-config="bucket=<your-tf-state-bucket>" \
   -backend-config="key=<path/to/terraform.tfstate>" \
   -backend-config="region=<aws-region>" \
-  -backend-config="dynamodb_table=<your-lock-table>" \
+  -backend-config="use_lockfile=true" \
   -backend-config="encrypt=true"
 terraform plan
 terraform apply
@@ -62,7 +62,6 @@ Use workflow `.github/workflows/infra-terraform.yml` and set these GitHub secret
 - `AWS_REGION`
 - `TF_STATE_BUCKET`
 - `TF_STATE_KEY`
-- `TF_LOCK_TABLE`
 - `TF_VARS_CONTENT` (paste full terraform vars content)
 
 The workflow bootstraps Terraform state resources, then runs init/plan/apply in GitHub Actions.
