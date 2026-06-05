@@ -154,7 +154,7 @@ resource "aws_iam_role_policy" "github_actions_deploy" {
           "ssm:SendCommand"
         ]
         Resource = [
-          "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:document/AWS-RunShellScript",
+          "arn:aws:ssm:${data.aws_region.current.name}::document/AWS-RunShellScript",
           aws_instance.backend.arn
         ]
       },
