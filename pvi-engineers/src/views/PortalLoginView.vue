@@ -71,7 +71,7 @@ async function submitLogin() {
       <v-form ref="formRef" @submit.prevent="submitLogin">
         <v-row dense>
           <v-col cols="12">
-            <v-text-field v-model="form.username" :rules="[required]" label="Username *" />
+            <v-text-field v-model="form.username" :rules="[required]" label="Username or Email *" />
           </v-col>
           <v-col cols="12">
             <v-text-field

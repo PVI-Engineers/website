@@ -31,7 +31,7 @@ public class UserBootstrapConfig {
             @Value("${app.bootstrap.employee.email:employee@pviengineers.com}") String employeeEmail
     ) {
         return args -> {
-            createUserIfMissing(
+            createOrUpdateBootstrapUser(
                     userRepository,
                     passwordEncoder,
                     adminUsername,
@@ -40,7 +40,7 @@ public class UserBootstrapConfig {
                     adminEmail,
                     Set.of(UserRole.ADMIN, UserRole.HR, UserRole.EMPLOYEE)
             );
-            createUserIfMissing(
+            createOrUpdateBootstrapUser(
                     userRepository,
                     passwordEncoder,
                     hrUsername,
@@ -49,7 +49,7 @@ public class UserBootstrapConfig {
                     hrEmail,
                     Set.of(UserRole.HR)
             );
-            createUserIfMissing(
+            createOrUpdateBootstrapUser(
                     userRepository,
                     passwordEncoder,
                     employeeUsername,
@@ -61,7 +61,7 @@ public class UserBootstrapConfig {
         };
     }
 
-    private void createUserIfMissing(
+    private void createOrUpdateBootstrapUser(
             AppUserRepository repository,
             PasswordEncoder encoder,
             String username,
@@ -70,12 +70,10 @@ public class UserBootstrapConfig {
             String email,
             Set<UserRole> roles
     ) {
-        if (repository.findByUsername(username).isPresent()) {
-            return;
+        AppUser user = repository.findByUsernameIgnoreCase(username).orElseGet(AppUser::new);
+        if (user.getId() == null) {
+            user.setUsername(username);
         }
-
-        AppUser user = new AppUser();
-        user.setUsername(username);
         user.setPasswordHash(encoder.encode(rawPassword));
         user.setFullName(fullName);
         user.setEmail(email);

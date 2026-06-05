@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -62,6 +64,32 @@ public class GlobalExceptionHandler {
                         resolvedStatus.value(),
                         resolvedStatus.getReasonPhrase(),
                         List.of(message)
+                )
+        );
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
+        LOGGER.error("Database integrity validation failed.", ex);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                new ApiErrorResponse(
+                        Instant.now(),
+                        HttpStatus.BAD_REQUEST.value(),
+                        "Invalid application data",
+                        List.of("Provided data could not be saved. Please verify inputs and retry.")
+                )
+        );
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<ApiErrorResponse> handleDataAccess(DataAccessException ex) {
+        LOGGER.error("Database operation failed.", ex);
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(
+                new ApiErrorResponse(
+                        Instant.now(),
+                        HttpStatus.SERVICE_UNAVAILABLE.value(),
+                        "Database unavailable",
+                        List.of("Temporary database issue. Please try again shortly.")
                 )
         );
     }

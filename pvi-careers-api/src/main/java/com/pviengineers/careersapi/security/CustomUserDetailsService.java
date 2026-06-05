@@ -20,7 +20,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return appUserRepository.findByUsername(username)
+        return appUserRepository.findByUsernameOrEmailIgnoreCase(username)
                 .map(user -> User.withUsername(user.getUsername())
                         .password(user.getPasswordHash())
                         .authorities(user.getRoles().stream()

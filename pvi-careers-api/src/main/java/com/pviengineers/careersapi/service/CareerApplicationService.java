@@ -125,7 +125,6 @@ public class CareerApplicationService {
 
     @Transactional
     public CareerApplicationResponse submit(CareerApplicationRequest request) {
-        ensureMailConfiguration();
         List<SubmittedFile> submittedFiles = validateAndNormalizeSubmittedFiles(request.getFiles());
         SubmittedFile resumeFile = submittedFiles.stream()
                 .filter(file -> "resume".equals(file.category()))
@@ -181,7 +180,13 @@ public class CareerApplicationService {
             entity.addFile(fileEntity);
         }
 
-        CareerApplication saved = repository.save(entity);
+        CareerApplication saved;
+        try {
+            saved = repository.saveAndFlush(entity);
+        } catch (RuntimeException ex) {
+            LOGGER.error("Failed to persist application for email={} jobId={}", entity.getEmail(), entity.getJobId(), ex);
+            throw ex;
+        }
 
         dispatchNotifications(saved);
 
@@ -192,6 +197,14 @@ public class CareerApplicationService {
     }
 
     private void dispatchNotifications(CareerApplication application) {
+        if (!isMailConfigurationReady()) {
+            LOGGER.warn(
+                    "Application {} saved, but mail configuration is incomplete. Skipping notification emails.",
+                    application.getApplicationRef()
+            );
+            return;
+        }
+
         try {
             sendCompanyNotification(application);
         } catch (Exception ex) {
@@ -219,18 +232,20 @@ public class CareerApplicationService {
         return "PVI-APP-" + datePart + "-" + randomPart;
     }
 
-    private void ensureMailConfiguration() {
+    private boolean isMailConfigurationReady() {
         if (resolveFromAddress().isBlank()) {
-            throw new IllegalArgumentException("Mail sender is not configured. Set MAIL_FROM or MAIL_USERNAME.");
+            return false;
         }
 
         if (companyMailAddress == null || companyMailAddress.isBlank()) {
-            throw new IllegalArgumentException("Company recipient email is not configured. Set COMPANY_MAIL_TO.");
+            return false;
         }
 
         if (isSesProvider() && sesClient.isEmpty()) {
-            throw new IllegalArgumentException("SES mail provider is selected but SES client is unavailable.");
+            return false;
         }
+
+        return true;
     }
 
     private void ensureS3StorageForPresignedUpload() {
