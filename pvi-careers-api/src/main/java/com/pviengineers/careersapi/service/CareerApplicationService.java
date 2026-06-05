@@ -167,7 +167,9 @@ public class CareerApplicationService {
         entity.setResumeContentType(resumeFile.contentType());
         entity.setResumeFileSize(resumeFile.sizeBytes());
         entity.setResumeStorageKey(resumeFile.storageKey());
-        entity.setResumeData(null);
+        // Keep a non-null payload for backward compatibility with older DB schemas
+        // where resume_data may still be NOT NULL from previous deployments.
+        entity.setResumeData(new byte[0]);
 
         for (SubmittedFile submittedFile : submittedFiles) {
             CareerApplicationFile fileEntity = new CareerApplicationFile();
