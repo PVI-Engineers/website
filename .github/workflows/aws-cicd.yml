@@ -149,6 +149,8 @@ jobs:
               "sudo nginx -t",
               "sudo systemctl enable nginx",
               "sudo systemctl restart nginx",
+              "if ! timeout 180 bash -c 'until curl -fsS http://127.0.0.1:8080/api/health >/dev/null 2>&1; do sleep 3; done'; then sudo systemctl status pvi-careers-api --no-pager || true; sudo journalctl -u pvi-careers-api -n 200 --no-pager || true; exit 1; fi",
+              "if ! timeout 120 bash -c 'until curl -fsS http://127.0.0.1/api/health >/dev/null 2>&1; do sleep 2; done'; then sudo systemctl status nginx --no-pager || true; sudo journalctl -u nginx -n 200 --no-pager || true; exit 1; fi",
               "curl -fsS http://127.0.0.1:8080/api/health",
               "curl -fsS http://127.0.0.1/api/health"
             ]
