@@ -142,6 +142,8 @@ jobs:
               "sudo systemctl daemon-reload",
               "sudo systemctl enable pvi-careers-api",
               "sudo systemctl restart pvi-careers-api",
+              "if ! command -v curl >/dev/null 2>&1; then if command -v dnf >/dev/null 2>&1; then sudo dnf install -y curl; else sudo yum install -y curl; fi; fi",
+              "if ! systemctl list-unit-files | grep -q '^nginx.service'; then if command -v dnf >/dev/null 2>&1; then sudo dnf install -y nginx; else sudo yum install -y nginx; fi; fi",
               "sudo systemctl enable nginx",
               "sudo systemctl restart nginx",
               "curl -fsS http://127.0.0.1:8080/api/health",
