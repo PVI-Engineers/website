@@ -27,6 +27,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
@@ -42,6 +44,7 @@ import software.amazon.awssdk.services.ses.model.SendRawEmailRequest;
 @Service
 public class CareerApplicationService {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CareerApplicationService.class);
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of(".pdf", ".doc", ".docx", ".png", ".jpg", ".jpeg");
     private static final Set<String> ALLOWED_FILE_CATEGORIES = Set.of("resume", "supporting");
     private static final long MAX_FILE_SIZE_BYTES = 5L * 1024 * 1024;
@@ -178,13 +181,34 @@ public class CareerApplicationService {
 
         CareerApplication saved = repository.save(entity);
 
-        sendCompanyNotification(saved);
-        sendApplicantAcknowledgement(saved);
+        dispatchNotifications(saved);
 
         return new CareerApplicationResponse(
                 saved.getApplicationRef(),
                 "Application submitted successfully."
         );
+    }
+
+    private void dispatchNotifications(CareerApplication application) {
+        try {
+            sendCompanyNotification(application);
+        } catch (Exception ex) {
+            LOGGER.error(
+                    "Application {} saved, but company notification email failed.",
+                    application.getApplicationRef(),
+                    ex
+            );
+        }
+
+        try {
+            sendApplicantAcknowledgement(application);
+        } catch (Exception ex) {
+            LOGGER.error(
+                    "Application {} saved, but applicant acknowledgement email failed.",
+                    application.getApplicationRef(),
+                    ex
+            );
+        }
     }
 
     private String generateApplicationRef() {
