@@ -129,14 +129,32 @@ jobs:
 
       - name: Deploy backend to EC2 using SSM
         if: steps.secrets_check.outputs.ready == 'true'
+        shell: bash
         run: |
+          SSM_PARAMETERS_FILE="$(mktemp)"
+          cat > "$SSM_PARAMETERS_FILE" <<EOF
+          {
+            "commands": [
+              "set -euo pipefail",
+              "aws s3 cp s3://${ARTIFACT_BUCKET}/backend/pvi-careers-api.jar /opt/pvi/pvi-careers-api.jar",
+              "echo ${BACKEND_SHA256}  /opt/pvi/pvi-careers-api.jar | sha256sum -c -",
+              "sudo chown ec2-user:ec2-user /opt/pvi/pvi-careers-api.jar",
+              "sudo systemctl daemon-reload",
+              "sudo systemctl enable pvi-careers-api",
+              "sudo systemctl restart pvi-careers-api"
+            ]
+          }
+          EOF
+
           COMMAND_ID=$(aws ssm send-command \
             --document-name "AWS-RunShellScript" \
             --instance-ids "$EC2_INSTANCE_ID" \
-            --parameters commands="set -euo pipefail; aws s3 cp s3://${ARTIFACT_BUCKET}/backend/pvi-careers-api.jar /opt/pvi/pvi-careers-api.jar; echo '${BACKEND_SHA256}  /opt/pvi/pvi-careers-api.jar' | sha256sum -c -; sudo chown ec2-user:ec2-user /opt/pvi/pvi-careers-api.jar; sudo systemctl daemon-reload; sudo systemctl enable pvi-careers-api; sudo systemctl restart pvi-careers-api" \
+            --parameters "file://${SSM_PARAMETERS_FILE}" \
             --query "Command.CommandId" \
             --output text)
 
           aws ssm wait command-executed \
             --command-id "$COMMAND_ID" \
             --instance-id "$EC2_INSTANCE_ID"
+
+          rm -f "$SSM_PARAMETERS_FILE"
