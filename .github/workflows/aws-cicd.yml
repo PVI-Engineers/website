@@ -154,10 +154,10 @@ jobs:
               "curl -fsS http://127.0.0.1:8080/api/health",
               "curl -fsS http://127.0.0.1/api/health",
               "sudo -u ec2-user aws sts get-caller-identity || true",
-              "PRESIGN_STATUS=$(curl -sS -o /tmp/presign-smoke.json -w \"%{http_code}\" -H \"Content-Type: application/json\" -d '{\"files\":[{\"clientFileId\":\"smoke-1\",\"category\":\"resume\",\"fileName\":\"smoke.pdf\",\"contentType\":\"application/pdf\",\"sizeBytes\":1024}]}' http://127.0.0.1/api/careers/applications/presign || true)",
-              "echo \"Presign smoke status: $PRESIGN_STATUS\"",
+              "PRESIGN_STATUS=\$(curl -sS -o /tmp/presign-smoke.json -w \"%{http_code}\" -H \"Content-Type: application/json\" -d '{\"files\":[{\"clientFileId\":\"smoke-1\",\"category\":\"resume\",\"fileName\":\"smoke.pdf\",\"contentType\":\"application/pdf\",\"sizeBytes\":1024}]}' http://127.0.0.1/api/careers/applications/presign || true)",
+              "echo \"Presign smoke status: \$PRESIGN_STATUS\"",
               "cat /tmp/presign-smoke.json || true",
-              "if [ \"$PRESIGN_STATUS\" != \"200\" ]; then sudo systemctl status pvi-careers-api --no-pager || true; sudo journalctl -u pvi-careers-api -n 200 --no-pager || true; sudo tail -n 200 /var/log/pvi-backend.log || true; exit 1; fi"
+              "if [ \"\$PRESIGN_STATUS\" != \"200\" ]; then sudo systemctl status pvi-careers-api --no-pager || true; sudo journalctl -u pvi-careers-api -n 200 --no-pager || true; sudo tail -n 200 /var/log/pvi-backend.log || true; exit 1; fi"
             ]
           }
           EOF
