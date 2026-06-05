@@ -141,7 +141,11 @@ jobs:
               "sudo chown ec2-user:ec2-user /opt/pvi/pvi-careers-api.jar",
               "sudo systemctl daemon-reload",
               "sudo systemctl enable pvi-careers-api",
-              "sudo systemctl restart pvi-careers-api"
+              "sudo systemctl restart pvi-careers-api",
+              "sudo systemctl enable nginx",
+              "sudo systemctl restart nginx",
+              "curl -fsS http://127.0.0.1:8080/api/health",
+              "curl -fsS http://127.0.0.1/api/health"
             ]
           }
           EOF
@@ -153,8 +157,35 @@ jobs:
             --query "Command.CommandId" \
             --output text)
 
+          set +e
           aws ssm wait command-executed \
             --command-id "$COMMAND_ID" \
             --instance-id "$EC2_INSTANCE_ID"
+          WAIT_EXIT_CODE=$?
+          set -e
+
+          SSM_STATUS=$(aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$EC2_INSTANCE_ID" \
+            --query "Status" \
+            --output text)
+
+          echo "SSM status: $SSM_STATUS"
+          echo "---- SSM stdout ----"
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$EC2_INSTANCE_ID" \
+            --query "StandardOutputContent" \
+            --output text
+          echo "---- SSM stderr ----"
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$EC2_INSTANCE_ID" \
+            --query "StandardErrorContent" \
+            --output text
+
+          if [ "$WAIT_EXIT_CODE" -ne 0 ] || [ "$SSM_STATUS" != "Success" ]; then
+            exit 1
+          fi
 
           rm -f "$SSM_PARAMETERS_FILE"
