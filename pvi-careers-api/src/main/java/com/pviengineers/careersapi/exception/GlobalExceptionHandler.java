@@ -85,12 +85,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
         LOGGER.error("Database integrity validation failed.", ex);
+        String rootCause = compactRootCause(ex);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                 new ApiErrorResponse(
                         Instant.now(),
                         HttpStatus.BAD_REQUEST.value(),
                         "Invalid application data",
-                        List.of("Provided data could not be saved. Please verify inputs and retry.")
+                        List.of(
+                                "Provided data could not be saved. Please verify inputs and retry.",
+                                "Debug: " + rootCause
+                        )
                 )
         );
     }
@@ -98,12 +102,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<ApiErrorResponse> handleDataAccess(DataAccessException ex) {
         LOGGER.error("Database operation failed.", ex);
+        String rootCause = compactRootCause(ex);
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(
                 new ApiErrorResponse(
                         Instant.now(),
                         HttpStatus.SERVICE_UNAVAILABLE.value(),
                         "Database unavailable",
-                        List.of("Temporary database issue. Please try again shortly.")
+                        List.of(
+                                "Temporary database issue. Please try again shortly.",
+                                "Debug: " + rootCause
+                        )
                 )
         );
     }
@@ -136,5 +144,25 @@ public class GlobalExceptionHandler {
 
     private String formatFieldError(FieldError fieldError) {
         return fieldError.getField() + ": " + fieldError.getDefaultMessage();
+    }
+
+    private String compactRootCause(Exception ex) {
+        Throwable cause = ex.getCause();
+        Throwable mostSpecific = ex;
+        while (cause != null && cause != mostSpecific) {
+            mostSpecific = cause;
+            cause = cause.getCause();
+        }
+
+        String message = mostSpecific.getMessage();
+        if (message == null || message.isBlank()) {
+            message = mostSpecific.getClass().getSimpleName();
+        }
+
+        String normalized = message.replaceAll("[\\r\\n\\t]+", " ").trim();
+        if (normalized.length() > 240) {
+            return normalized.substring(0, 240) + "...";
+        }
+        return normalized;
     }
 }
