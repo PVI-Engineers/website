@@ -1,8 +1,19 @@
 #!/bin/bash
 set -euxo pipefail
 
-yum update -y
-yum install -y java-17-amazon-corretto-headless nginx amazon-cloudwatch-agent awscli
+if command -v dnf >/dev/null 2>&1; then
+  dnf update -y
+  dnf install -y java-17-amazon-corretto-headless nginx amazon-cloudwatch-agent awscli curl
+else
+  yum update -y
+  yum install -y java-17-amazon-corretto-headless amazon-cloudwatch-agent awscli curl
+
+  if command -v amazon-linux-extras >/dev/null 2>&1; then
+    amazon-linux-extras install -y nginx1
+  else
+    yum install -y nginx
+  fi
+fi
 
 mkdir -p /opt/pvi
 touch /var/log/pvi-backend.log
