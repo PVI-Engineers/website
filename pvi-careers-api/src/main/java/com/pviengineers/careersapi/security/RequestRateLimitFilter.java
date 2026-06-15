@@ -34,6 +34,9 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
     @Value("${app.security.rate-limit.application-submit-per-minute:20}")
     private int applicationSubmitPerMinute;
 
+    @Value("${app.security.rate-limit.contact-submit-per-minute:20}")
+    private int contactSubmitPerMinute;
+
     @Value("${app.security.rate-limit.health-per-minute:120}")
     private int healthPerMinute;
 
@@ -82,6 +85,10 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
 
         if ("POST".equalsIgnoreCase(method) && "/api/careers/applications".equals(path)) {
             return applicationSubmitPerMinute;
+        }
+
+        if ("POST".equalsIgnoreCase(method) && "/api/contact/inquiries".equals(path)) {
+            return contactSubmitPerMinute;
         }
 
         if ("/api/health".equals(path)) {

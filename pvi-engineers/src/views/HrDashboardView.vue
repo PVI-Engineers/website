@@ -6,6 +6,7 @@ import {
   downloadApplicationFile,
   downloadResume,
   fetchHrApplications,
+  fetchHrContactInquiries,
   getStoredUser,
 } from '../services/portalApi'
 
@@ -14,9 +15,11 @@ const loading = ref(true)
 const downloadLoadingKey = ref('')
 const errorMessage = ref('')
 const applications = ref([])
+const contactInquiries = ref([])
 const portalUser = ref(getStoredUser())
 
 const applicationCount = computed(() => applications.value.length)
+const contactInquiryCount = computed(() => contactInquiries.value.length)
 
 function formatDateTime(value) {
   if (!value) return '-'
@@ -27,7 +30,12 @@ async function loadApplications() {
   loading.value = true
   errorMessage.value = ''
   try {
-    applications.value = await fetchHrApplications()
+    const [hrApplications, hrContactInquiries] = await Promise.all([
+      fetchHrApplications(),
+      fetchHrContactInquiries(),
+    ])
+    applications.value = hrApplications
+    contactInquiries.value = hrContactInquiries
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : 'Failed to load applications.'
   } finally {
@@ -89,9 +97,10 @@ onMounted(loadApplications)
     <section class="d-flex justify-space-between align-start flex-wrap ga-4">
       <div>
         <p class="section-kicker">HR Dashboard</p>
-        <h1 class="page-title">Applications Management</h1>
+        <h1 class="page-title">Applications and Contact Inquiries</h1>
         <p class="page-copy">
-          View submitted applications and download resumes and supporting files shared by candidates.
+          Review candidate applications, download uploaded files, and track contact inquiries submitted
+          from website users.
         </p>
       </div>
       <div class="d-flex ga-2 flex-wrap">
@@ -106,7 +115,14 @@ onMounted(loadApplications)
         <p class="meta-line">
           Logged in as <strong>{{ portalUser?.fullName || portalUser?.username }}</strong>
         </p>
-        <v-chip color="primary" variant="tonal">Total applications: {{ applicationCount }}</v-chip>
+        <div class="d-flex ga-2 flex-wrap">
+          <v-chip color="primary" variant="tonal">
+            Total applications: {{ applicationCount }}
+          </v-chip>
+          <v-chip color="secondary" variant="tonal">
+            Contact inquiries: {{ contactInquiryCount }}
+          </v-chip>
+        </div>
       </div>
     </v-card>
 
@@ -208,6 +224,42 @@ onMounted(loadApplications)
         </v-expansion-panel-text>
       </v-expansion-panel>
     </v-expansion-panels>
+
+    <v-card v-if="!loading && contactInquiries.length === 0" class="glass-card pa-8 mt-8">
+      <p class="section-kicker">No contact inquiries yet</p>
+      <h2 class="section-title mt-2">No website contact submissions found</h2>
+      <p class="page-copy mt-3">
+        Once users submit the Contact form, records will appear here for HR review.
+      </p>
+    </v-card>
+
+    <v-card v-else-if="!loading" class="glass-card pa-6 mt-8">
+      <p class="mini-kicker mb-3">Latest Contact Inquiries</p>
+      <v-table class="transparent-table">
+        <thead>
+          <tr>
+            <th>Reference</th>
+            <th>Name</th>
+            <th>Inquiry Type</th>
+            <th>Email / Phone</th>
+            <th>Company</th>
+            <th>Message</th>
+            <th>Submitted On</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="inquiry in contactInquiries" :key="inquiry.id">
+            <td>{{ inquiry.inquiryRef }}</td>
+            <td>{{ inquiry.name }}</td>
+            <td>{{ inquiry.inquiryType }}</td>
+            <td>{{ inquiry.email }}<br />{{ inquiry.phone }}</td>
+            <td>{{ inquiry.company || '-' }}</td>
+            <td class="message-cell">{{ inquiry.message }}</td>
+            <td>{{ formatDateTime(inquiry.createdAt) }}</td>
+          </tr>
+        </tbody>
+      </v-table>
+    </v-card>
   </v-container>
 </template>
 
@@ -288,6 +340,21 @@ onMounted(loadApplications)
 .meta-value {
   margin: 6px 0 0;
   color: var(--text-card-copy);
+  white-space: pre-line;
+}
+
+.transparent-table {
+  background: transparent;
+}
+
+.transparent-table :deep(th),
+.transparent-table :deep(td) {
+  color: var(--text-card-copy);
+  vertical-align: top;
+}
+
+.message-cell {
+  max-width: 360px;
   white-space: pre-line;
 }
 </style>

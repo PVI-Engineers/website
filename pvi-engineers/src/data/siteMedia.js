@@ -4,7 +4,6 @@ import contactOffice from '../assets/media-contact-office.svg'
 import documentsDesk from '../assets/media-documents-desk.svg'
 import infrastructureHero from '../assets/media-infrastructure-hero.svg'
 import newsEvents from '../assets/media-news-events.svg'
-import privacyShield from '../assets/media-privacy-shield.svg'
 import surveyGrid from '../assets/media-survey-grid.svg'
 import teamOffice from '../assets/media-team-office.svg'
 import waterPlant from '../assets/media-water-plant.svg'
@@ -55,10 +54,6 @@ const sectionMedia = {
   '/our-work': {
     hero: workShowcase,
     gallery: [workShowcase, civilCorridor, waterPlant],
-  },
-  '/privacy-statement': {
-    hero: privacyShield,
-    gallery: [privacyShield, documentsDesk, contactOffice],
   },
 }
 

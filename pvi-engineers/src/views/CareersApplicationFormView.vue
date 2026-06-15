@@ -459,7 +459,7 @@ async function submitApplication() {
             v-model="application.consentPrivacy"
             :rules="[requiredTrue]"
             color="primary"
-            label="I agree to PVI ENGINEERS processing my application data as per the Privacy Statement. *"
+            label="I agree to PVI ENGINEERS processing my application data. *"
           />
           <v-checkbox
             v-model="application.consentBackground"

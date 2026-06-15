@@ -140,6 +140,10 @@ async function fetchHrApplications() {
   return request('/api/hr/applications')
 }
 
+async function fetchHrContactInquiries() {
+  return request('/api/hr/contact-inquiries')
+}
+
 async function fetchAdminUsers() {
   return request('/api/admin/users')
 }
@@ -197,6 +201,7 @@ export {
   fetchCurrentUser,
   fetchEmployeeHome,
   fetchHrApplications,
+  fetchHrContactInquiries,
   getStoredToken,
   getStoredUser,
   hasAnyRole,

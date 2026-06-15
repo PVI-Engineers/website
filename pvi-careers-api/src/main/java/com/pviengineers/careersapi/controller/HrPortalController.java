@@ -4,8 +4,11 @@ import com.pviengineers.careersapi.dto.hr.HrApplicationResponse;
 import com.pviengineers.careersapi.dto.hr.HrApplicationFileResponse;
 import com.pviengineers.careersapi.model.CareerApplication;
 import com.pviengineers.careersapi.model.CareerApplicationFile;
+import com.pviengineers.careersapi.dto.hr.HrContactInquiryResponse;
+import com.pviengineers.careersapi.model.ContactInquiry;
 import com.pviengineers.careersapi.repository.CareerApplicationFileRepository;
 import com.pviengineers.careersapi.repository.CareerApplicationRepository;
+import com.pviengineers.careersapi.repository.ContactInquiryRepository;
 import com.pviengineers.careersapi.service.ResumeStorageService;
 import java.util.List;
 import org.springframework.core.io.ByteArrayResource;
@@ -28,15 +31,18 @@ public class HrPortalController {
 
     private final CareerApplicationRepository applicationRepository;
     private final CareerApplicationFileRepository fileRepository;
+    private final ContactInquiryRepository contactInquiryRepository;
     private final ResumeStorageService resumeStorageService;
 
     public HrPortalController(
             CareerApplicationRepository applicationRepository,
             CareerApplicationFileRepository fileRepository,
+            ContactInquiryRepository contactInquiryRepository,
             ResumeStorageService resumeStorageService
     ) {
         this.applicationRepository = applicationRepository;
         this.fileRepository = fileRepository;
+        this.contactInquiryRepository = contactInquiryRepository;
         this.resumeStorageService = resumeStorageService;
     }
 
@@ -45,6 +51,15 @@ public class HrPortalController {
         List<HrApplicationResponse> payload = applicationRepository.findAllByOrderByCreatedAtDesc()
                 .stream()
                 .map(this::toHrResponse)
+                .toList();
+        return ResponseEntity.ok(payload);
+    }
+
+    @GetMapping("/contact-inquiries")
+    public ResponseEntity<List<HrContactInquiryResponse>> getContactInquiries() {
+        List<HrContactInquiryResponse> payload = contactInquiryRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(this::toContactInquiryResponse)
                 .toList();
         return ResponseEntity.ok(payload);
     }
@@ -125,6 +140,20 @@ public class HrPortalController {
                         ))
                         .toList(),
                 app.getCreatedAt()
+        );
+    }
+
+    private HrContactInquiryResponse toContactInquiryResponse(ContactInquiry inquiry) {
+        return new HrContactInquiryResponse(
+                inquiry.getId(),
+                inquiry.getInquiryRef(),
+                inquiry.getName(),
+                inquiry.getEmail(),
+                inquiry.getPhone(),
+                inquiry.getCompany(),
+                inquiry.getInquiryType(),
+                inquiry.getMessage(),
+                inquiry.getCreatedAt()
         );
     }
 

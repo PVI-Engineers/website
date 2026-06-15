@@ -288,8 +288,8 @@ onMounted(() => {
               Futuristic civil engineering website with dedicated pages for every menu and dropdown
               option.
             </p>
-            <p class="footer-copy mt-3">Email: hello@pviengineers.com</p>
-            <p class="footer-copy">Phone: +91 80 4567 2200</p>
+            <p class="footer-copy mt-3">Email: contact@pviengineers.com</p>
+            <p class="footer-copy">Phone: +1 6055920819</p>
           </v-col>
 
           <v-col cols="12" md="4">
@@ -326,7 +326,6 @@ onMounted(() => {
           <p class="footer-meta">
             © {{ year }} PVI ENGINEERS. All rights reserved.
           </p>
-          <router-link class="footer-policy" to="/privacy-statement">Privacy Statement</router-link>
         </div>
       </v-container>
     </v-footer>
@@ -651,12 +650,6 @@ onMounted(() => {
   margin: 0;
   color: var(--footer-meta);
   font-size: 0.88rem;
-}
-
-.footer-policy {
-  color: var(--footer-policy);
-  text-decoration: none;
-  font-size: 0.9rem;
 }
 
 @keyframes float {

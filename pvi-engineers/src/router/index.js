@@ -6,6 +6,7 @@ import CareersCultureView from '../views/CareersCultureView.vue'
 import CareersHiringProcessView from '../views/CareersHiringProcessView.vue'
 import CareersOpenPositionsView from '../views/CareersOpenPositionsView.vue'
 import CareersView from '../views/CareersView.vue'
+import ContactView from '../views/ContactView.vue'
 import EmployeeDashboardView from '../views/EmployeeDashboardView.vue'
 import HomeView from '../views/HomeView.vue'
 import HrDashboardView from '../views/HrDashboardView.vue'
@@ -19,9 +20,15 @@ const customCareersPaths = new Set([
   '/careers/hiring-process',
   '/careers/work-culture-and-benefits',
 ])
+const customContactPaths = new Set([
+  '/contact',
+  '/contact/general-inquiries',
+  '/contact/business-proposals',
+  '/contact/vendor-registration',
+])
 
 const generatedRoutes = pageCatalog
-  .filter((page) => !customCareersPaths.has(page.path))
+  .filter((page) => !customCareersPaths.has(page.path) && !customContactPaths.has(page.path))
   .map((page) => ({
   path: page.path,
   name: `page-${page.path.replace(/\//g, '-').replace(/^-/, '')}`,
@@ -39,6 +46,22 @@ const routes = [
     path: '/careers/work-culture-and-benefits',
     name: 'CareersCulture',
     component: CareersCultureView,
+  },
+  { path: '/contact', name: 'Contact', component: ContactView },
+  {
+    path: '/contact/general-inquiries',
+    name: 'ContactGeneralInquiries',
+    component: ContactView,
+  },
+  {
+    path: '/contact/business-proposals',
+    name: 'ContactBusinessProposals',
+    component: ContactView,
+  },
+  {
+    path: '/contact/vendor-registration',
+    name: 'ContactVendorRegistration',
+    component: ContactView,
   },
   { path: '/portal/login', name: 'PortalLogin', component: PortalLoginView },
   {
@@ -81,7 +104,6 @@ const routes = [
   { path: '/projects', redirect: '/our-work' },
   { path: '/about', redirect: '/about-us' },
   { path: '/news-events', redirect: '/news-and-events' },
-  { path: '/privacy', redirect: '/privacy-statement' },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 

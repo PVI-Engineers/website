@@ -1,60 +1,123 @@
 <script setup>
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { submitContactInquiry } from '../services/contactApi'
 
+const route = useRoute()
 const formRef = ref(null)
 const snackbar = ref(false)
 const submitting = ref(false)
+const submissionError = ref('')
+const submittedRef = ref('')
 
 const inquiry = reactive({
   name: '',
   email: '',
+  phone: '',
   company: '',
-  service: '',
+  inquiryType: '',
   message: '',
 })
 
-const services = [
-  'Road Design Engineering',
-  'Water Management Planning',
-  'Drainage & Flood Resilience',
-  'Integrated Infrastructure Consulting',
+const inquiryTypeOptions = [
+  'General Inquiries',
+  'Business Proposals',
+  'Vendor Registration',
+  'Technical Consultation',
+  'Other',
 ]
+
+const presetInquiryTypeByPath = {
+  '/contact/general-inquiries': 'General Inquiries',
+  '/contact/business-proposals': 'Business Proposals',
+  '/contact/vendor-registration': 'Vendor Registration',
+}
+
+const contextByPath = {
+  '/contact': {
+    kicker: 'Contact',
+    title: 'Let’s Engineer Your Next Infrastructure Project',
+    copy: 'Share your requirements and our team will connect with a tailored plan for road design, water management, or drainage engineering services.',
+  },
+  '/contact/general-inquiries': {
+    kicker: 'Contact • General Inquiries',
+    title: 'Talk to Our Team',
+    copy: 'Need service details, capability clarification, or project consultation? Submit your inquiry and we will route it to the right team.',
+  },
+  '/contact/business-proposals': {
+    kicker: 'Contact • Business Proposals',
+    title: 'Submit Your Business Proposal',
+    copy: 'Share your proposal scope, timelines, and partnership intent. Our team will review and respond with the next steps.',
+  },
+  '/contact/vendor-registration': {
+    kicker: 'Contact • Vendor Registration',
+    title: 'Vendor Registration Inquiry',
+    copy: 'Suppliers and partners can submit profile details and onboarding questions to start the vendor evaluation process.',
+  },
+}
+
+const pageContext = computed(() => contextByPath[route.path] ?? contextByPath['/contact'])
 
 const required = (value) => !!value || 'This field is required'
 const emailRule = (value) => /.+@.+\..+/.test(value) || 'Enter a valid email address'
+const phoneRule = (value) =>
+  /^[0-9+\-\s()]{8,18}$/.test(value) || 'Enter a valid contact number'
+
+function applyInquiryTypePreset() {
+  const preset = presetInquiryTypeByPath[route.path]
+  inquiry.inquiryType = preset || ''
+}
+
+function resetInquiryForm() {
+  inquiry.name = ''
+  inquiry.email = ''
+  inquiry.phone = ''
+  inquiry.company = ''
+  inquiry.message = ''
+  inquiry.inquiryType = ''
+  applyInquiryTypePreset()
+}
+
+watch(
+  () => route.path,
+  () => {
+    submissionError.value = ''
+    submittedRef.value = ''
+    applyInquiryTypePreset()
+  },
+  { immediate: true },
+)
 
 async function submitForm() {
   if (!formRef.value) return
 
+  submissionError.value = ''
   const { valid } = await formRef.value.validate()
   if (!valid) return
 
   submitting.value = true
 
-  setTimeout(() => {
-    submitting.value = false
+  try {
+    const response = await submitContactInquiry(inquiry)
+    submittedRef.value = response.inquiryRef || ''
     snackbar.value = true
-
-    inquiry.name = ''
-    inquiry.email = ''
-    inquiry.company = ''
-    inquiry.service = ''
-    inquiry.message = ''
-
+    resetInquiryForm()
     formRef.value.resetValidation()
-  }, 800)
+  } catch (error) {
+    submissionError.value =
+      error instanceof Error ? error.message : 'Failed to submit inquiry. Please try again.'
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 
 <template>
   <v-container class="page-shell">
     <section>
-      <p class="section-kicker">Contact</p>
-      <h1 class="page-title">Let’s Engineer Your Next Infrastructure Project</h1>
-      <p class="page-copy">
-        Share your requirements and our team will connect with a tailored plan for road design,
-        water management, or drainage engineering services.
-      </p>
+      <p class="section-kicker">{{ pageContext.kicker }}</p>
+      <h1 class="page-title">{{ pageContext.title }}</h1>
+      <p class="page-copy">{{ pageContext.copy }}</p>
     </section>
 
     <v-row class="mt-8" dense>
@@ -62,16 +125,16 @@ async function submitForm() {
         <v-card class="glass-card pa-6 h-100">
           <h2 class="card-title">Contact Information</h2>
           <div class="info-group mt-6">
-            <p class="info-label">Head Office</p>
-            <p class="info-value">PVI ENGINEERS, Bengaluru, Karnataka, India</p>
+            <p class="info-label">Office</p>
+            <p class="info-value">PVI ENGINEERS</p>
           </div>
           <div class="info-group mt-4">
             <p class="info-label">Email</p>
-            <p class="info-value">hello@pviengineers.com</p>
+            <p class="info-value">contact@pviengineers.com</p>
           </div>
           <div class="info-group mt-4">
             <p class="info-label">Phone</p>
-            <p class="info-value">+91 80 4567 2200</p>
+            <p class="info-value">+1 6055920819</p>
           </div>
           <div class="info-group mt-4">
             <p class="info-label">Working Hours</p>
@@ -89,12 +152,33 @@ async function submitForm() {
       <v-col cols="12" md="8">
         <v-card class="glass-card pa-6">
           <h2 class="card-title mb-5">Project Inquiry Form</h2>
+          <p class="card-copy mt-0 mb-4">
+            Submitted details are securely stored and shared with our response team for follow-up.
+          </p>
+          <v-alert
+            v-if="submissionError"
+            class="mb-4"
+            type="error"
+            variant="tonal"
+            border="start"
+          >
+            {{ submissionError }}
+          </v-alert>
+          <v-alert
+            v-if="submittedRef"
+            class="mb-4"
+            type="success"
+            variant="tonal"
+            border="start"
+          >
+            Inquiry submitted successfully. Reference ID: {{ submittedRef }}
+          </v-alert>
           <v-form ref="formRef" @submit.prevent="submitForm">
             <v-row dense>
               <v-col cols="12" md="6">
                 <v-text-field
                   v-model="inquiry.name"
-                  label="Your Name"
+                  label="Your Name *"
                   :rules="[required]"
                   color="primary"
                 />
@@ -102,24 +186,31 @@ async function submitForm() {
               <v-col cols="12" md="6">
                 <v-text-field
                   v-model="inquiry.email"
-                  label="Work Email"
+                  label="Work Email *"
                   :rules="[required, emailRule]"
                   color="primary"
                 />
               </v-col>
-              <v-col cols="12">
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="inquiry.phone"
+                  label="Phone Number *"
+                  :rules="[required, phoneRule]"
+                  color="primary"
+                />
+              </v-col>
+              <v-col cols="12" md="6">
                 <v-text-field
                   v-model="inquiry.company"
                   label="Company / Organization"
-                  :rules="[required]"
                   color="primary"
                 />
               </v-col>
               <v-col cols="12">
                 <v-select
-                  v-model="inquiry.service"
-                  :items="services"
-                  label="Service Needed"
+                  v-model="inquiry.inquiryType"
+                  :items="inquiryTypeOptions"
+                  label="Inquiry Type *"
                   :rules="[required]"
                   color="primary"
                 />
@@ -127,7 +218,7 @@ async function submitForm() {
               <v-col cols="12">
                 <v-textarea
                   v-model="inquiry.message"
-                  label="Project Details"
+                  label="How can we help you? *"
                   :rules="[required]"
                   rows="5"
                   auto-grow
@@ -146,7 +237,7 @@ async function submitForm() {
     </v-row>
 
     <v-snackbar v-model="snackbar" color="success" timeout="3000">
-      Thank you! Your inquiry has been captured. Our team will contact you shortly.
+      Thank you! Your inquiry has been captured and sent to our team.
     </v-snackbar>
   </v-container>
 </template>

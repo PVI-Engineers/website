@@ -7,6 +7,7 @@ import {
   downloadResume,
   fetchAdminUsers,
   fetchHrApplications,
+  fetchHrContactInquiries,
   getStoredUser,
 } from '../services/portalApi'
 
@@ -16,10 +17,12 @@ const errorMessage = ref('')
 const adminUser = ref(getStoredUser())
 const users = ref([])
 const applications = ref([])
+const contactInquiries = ref([])
 const downloadLoadingKey = ref('')
 
 const userCount = computed(() => users.value.length)
 const applicationCount = computed(() => applications.value.length)
+const contactInquiryCount = computed(() => contactInquiries.value.length)
 
 function formatDateTime(value) {
   if (!value) return '-'
@@ -31,9 +34,14 @@ async function loadDashboard() {
   errorMessage.value = ''
 
   try {
-    const [internalUsers, hrApplications] = await Promise.all([fetchAdminUsers(), fetchHrApplications()])
+    const [internalUsers, hrApplications, hrContactInquiries] = await Promise.all([
+      fetchAdminUsers(),
+      fetchHrApplications(),
+      fetchHrContactInquiries(),
+    ])
     users.value = internalUsers
     applications.value = hrApplications
+    contactInquiries.value = hrContactInquiries
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : 'Failed to load admin dashboard.'
   } finally {
@@ -97,7 +105,7 @@ onMounted(loadDashboard)
         <p class="section-kicker">Admin Dashboard</p>
         <h1 class="page-title">Full Access Control Center</h1>
         <p class="page-copy">
-          Admin can manage users and access all HR application data including candidate file downloads.
+          Admin can manage users, review HR application data, and monitor website contact inquiries.
         </p>
       </div>
       <div class="d-flex ga-2 flex-wrap">
@@ -112,22 +120,28 @@ onMounted(loadDashboard)
     </v-alert>
 
     <v-row class="mt-2" dense>
-      <v-col cols="12" md="4">
+      <v-col cols="12" md="3">
         <v-card class="glass-card pa-5">
           <p class="mini-kicker">Current Login</p>
           <p class="metric mt-2">{{ adminUser?.fullName || adminUser?.username }}</p>
         </v-card>
       </v-col>
-      <v-col cols="12" md="4">
+      <v-col cols="12" md="3">
         <v-card class="glass-card pa-5">
           <p class="mini-kicker">Internal Users</p>
           <p class="metric mt-2">{{ userCount }}</p>
         </v-card>
       </v-col>
-      <v-col cols="12" md="4">
+      <v-col cols="12" md="3">
         <v-card class="glass-card pa-5">
           <p class="mini-kicker">Applications</p>
           <p class="metric mt-2">{{ applicationCount }}</p>
+        </v-card>
+      </v-col>
+      <v-col cols="12" md="3">
+        <v-card class="glass-card pa-5">
+          <p class="mini-kicker">Contact Inquiries</p>
+          <p class="metric mt-2">{{ contactInquiryCount }}</p>
         </v-card>
       </v-col>
     </v-row>
@@ -196,6 +210,34 @@ onMounted(loadDashboard)
           </tbody>
         </v-table>
       </v-card>
+
+      <v-card class="glass-card pa-6 mt-6">
+        <p class="mini-kicker mb-3">Latest Contact Inquiries</p>
+        <v-table class="transparent-table">
+          <thead>
+            <tr>
+              <th>Reference</th>
+              <th>Name</th>
+              <th>Inquiry Type</th>
+              <th>Email / Phone</th>
+              <th>Company</th>
+              <th>Message</th>
+              <th>Submitted On</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="inquiry in contactInquiries.slice(0, 8)" :key="inquiry.id">
+              <td>{{ inquiry.inquiryRef }}</td>
+              <td>{{ inquiry.name }}</td>
+              <td>{{ inquiry.inquiryType }}</td>
+              <td>{{ inquiry.email }}<br />{{ inquiry.phone }}</td>
+              <td>{{ inquiry.company || '-' }}</td>
+              <td class="message-cell">{{ inquiry.message }}</td>
+              <td>{{ formatDateTime(inquiry.createdAt) }}</td>
+            </tr>
+          </tbody>
+        </v-table>
+      </v-card>
     </template>
   </v-container>
 </template>
@@ -250,5 +292,11 @@ onMounted(loadDashboard)
 .transparent-table :deep(th),
 .transparent-table :deep(td) {
   color: var(--text-card-copy);
+  vertical-align: top;
+}
+
+.message-cell {
+  max-width: 340px;
+  white-space: pre-line;
 }
 </style>
