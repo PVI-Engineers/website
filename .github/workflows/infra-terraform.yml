@@ -9,13 +9,19 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "plan or apply"
+        description: "plan, apply, or destroy"
         required: true
         default: "plan"
         type: choice
         options:
           - plan
           - apply
+          - destroy
+      confirm_destroy:
+        description: "Type DESTROY to confirm infrastructure teardown (required only for destroy mode)"
+        required: false
+        default: ""
+        type: string
 
 permissions:
   id-token: write
@@ -28,13 +34,14 @@ concurrency:
 jobs:
   terraform:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     env:
       AWS_REGION: ${{ secrets.AWS_REGION || 'us-west-2' }}
       AWS_ROLE_TO_ASSUME_INFRA: ${{ secrets.AWS_ROLE_TO_ASSUME_INFRA }}
       TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
       TF_STATE_KEY: ${{ secrets.TF_STATE_KEY }}
       TF_VARS_CONTENT: ${{ secrets.TF_VARS_CONTENT }}
+      TF_MODE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.mode || 'push' }}
 
     steps:
       - name: Checkout
@@ -42,6 +49,15 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 1
+
+      - name: Validate destroy confirmation
+        if: env.TF_MODE == 'destroy'
+        shell: bash
+        run: |
+          if [ "${{ github.event.inputs.confirm_destroy }}" != "DESTROY" ]; then
+            echo "Destroy aborted. Re-run workflow with mode=destroy and confirm_destroy=DESTROY"
+            exit 1
+          fi
 
       - name: Check infra deployment secrets
         id: secrets_check
@@ -118,11 +134,11 @@ jobs:
             -backend-config="encrypt=true"
 
       - name: Terraform Fmt
-        if: steps.secrets_check.outputs.ready == 'true'
+        if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE != 'destroy'
         run: terraform -chdir=infrastructure/terraform fmt -check -recursive
 
       - name: Terraform Validate
-        if: steps.secrets_check.outputs.ready == 'true'
+        if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE != 'destroy'
         run: terraform -chdir=infrastructure/terraform validate
 
       - name: Write Terraform variables
@@ -134,7 +150,7 @@ jobs:
           echo "TF_VARS_FILE=$TF_VARS_FILE" >> "$GITHUB_ENV"
 
       - name: Terraform Plan
-        if: steps.secrets_check.outputs.ready == 'true'
+        if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE != 'destroy'
         run: terraform -chdir=infrastructure/terraform plan -lock-timeout=300s -var-file="${TF_VARS_FILE}" -out=tfplan
 
       - name: Terraform Apply on Push
@@ -142,11 +158,65 @@ jobs:
         run: terraform -chdir=infrastructure/terraform apply -lock-timeout=300s -auto-approve tfplan
 
       - name: Terraform Apply on Manual Trigger
-        if: steps.secrets_check.outputs.ready == 'true' && github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'apply'
+        if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE == 'apply'
         run: terraform -chdir=infrastructure/terraform apply -lock-timeout=300s -auto-approve tfplan
 
+      - name: Disable RDS deletion protection before destroy
+        if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE == 'destroy'
+        run: |
+          terraform -chdir=infrastructure/terraform apply -lock-timeout=300s -auto-approve \
+            -var-file="${TF_VARS_FILE}" \
+            -var="rds_deletion_protection=false" \
+            -var="rds_skip_final_snapshot=true" \
+            -target=aws_db_instance.postgres
+
+      - name: Empty application S3 buckets before destroy
+        if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE == 'destroy'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          empty_bucket() {
+            local bucket="$1"
+            if [ -z "$bucket" ] || [ "$bucket" = "null" ]; then
+              return 0
+            fi
+
+            echo "Emptying s3://${bucket}"
+            aws s3 rm "s3://${bucket}" --recursive || true
+
+            while true; do
+              payload="$(aws s3api list-object-versions \
+                --bucket "$bucket" \
+                --output json \
+                --query '{Objects: ((Versions || `[]`) + (DeleteMarkers || `[]`)) | map({Key: Key, VersionId: VersionId})}')"
+
+              object_count="$(echo "$payload" | jq '.Objects | length')"
+              if [ "$object_count" -eq 0 ]; then
+                break
+              fi
+
+              aws s3api delete-objects \
+                --bucket "$bucket" \
+                --delete "$payload" || true
+            done
+          }
+
+          for output_name in frontend_bucket_name resume_bucket_name artifacts_bucket_name; do
+            bucket="$(terraform -chdir=infrastructure/terraform output -raw "$output_name" 2>/dev/null || true)"
+            empty_bucket "$bucket"
+          done
+
+      - name: Terraform Destroy on Manual Trigger
+        if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE == 'destroy'
+        run: |
+          terraform -chdir=infrastructure/terraform destroy -lock-timeout=300s -auto-approve \
+            -var-file="${TF_VARS_FILE}" \
+            -var="rds_deletion_protection=false" \
+            -var="rds_skip_final_snapshot=true"
+
       - name: Publish Outputs Summary
-        if: steps.secrets_check.outputs.ready == 'true' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'apply'))
+        if: steps.secrets_check.outputs.ready == 'true' && (github.event_name == 'push' || env.TF_MODE == 'apply')
         shell: bash
         run: |
           {
@@ -158,4 +228,22 @@ jobs:
             echo "- artifacts_bucket_name: $(terraform -chdir=infrastructure/terraform output -raw artifacts_bucket_name)"
             echo "- ec2_instance_id: $(terraform -chdir=infrastructure/terraform output -raw ec2_instance_id)"
             echo "- github_actions_role_arn: $(terraform -chdir=infrastructure/terraform output -raw github_actions_role_arn)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish Destroy Summary
+        if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE == 'destroy'
+        shell: bash
+        run: |
+          {
+            echo "## Terraform Destroy Completed"
+            echo ""
+            echo "Infrastructure resources managed by this Terraform state were destroyed."
+            echo ""
+            echo "Still review AWS Billing after 24-48 hours."
+            echo "These may remain unless deleted manually:"
+            echo "- Terraform state bucket: ${TF_STATE_BUCKET}"
+            echo "- Route53 hosted zone (if recreated outside Terraform)"
+            echo "- Domain registration at your registrar"
+            echo ""
+            echo "To redeploy later, run this workflow with mode=apply."
           } >> "$GITHUB_STEP_SUMMARY"
