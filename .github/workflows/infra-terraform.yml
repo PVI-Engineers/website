@@ -186,19 +186,14 @@ jobs:
             aws s3 rm "s3://${bucket}" --recursive || true
 
             while true; do
-              payload="$(aws s3api list-object-versions \
-                --bucket "$bucket" \
-                --output json \
-                --query '{Objects: ((Versions || `[]`) + (DeleteMarkers || `[]`)) | map({Key: Key, VersionId: VersionId})}')"
-
-              object_count="$(echo "$payload" | jq '.Objects | length')"
+              response="$(aws s3api list-object-versions --bucket "$bucket" --output json 2>/dev/null || echo '{}')"
+              object_count="$(echo "$response" | jq '((.Versions // []) + (.DeleteMarkers // [])) | length')"
               if [ "$object_count" -eq 0 ]; then
                 break
               fi
 
-              aws s3api delete-objects \
-                --bucket "$bucket" \
-                --delete "$payload" || true
+              payload="$(echo "$response" | jq -c '{Objects: ((.Versions // []) + (.DeleteMarkers // [])) | map({Key: .Key, VersionId: .VersionId})}')"
+              aws s3api delete-objects --bucket "$bucket" --delete "$payload" || true
             done
           }
 
