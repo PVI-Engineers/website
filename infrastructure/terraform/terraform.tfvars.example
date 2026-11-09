@@ -52,4 +52,4 @@ extra_frontend_urls = []
 alarm_email = "alerts@mouwengineering.com"
 enable_waf = true
 waf_rate_limit = 2000
-rds_deletion_protection = false
+rds_deletion_protection = true

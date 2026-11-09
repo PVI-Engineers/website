@@ -130,7 +130,7 @@ async function submitForm() {
           </div>
           <div class="info-group mt-4">
             <p class="info-label">Email</p>
-            <p class="info-value">contact@pviengineers.com</p>
+            <p class="info-value">contact@mouwengineering.com</p>
           </div>
           <div class="info-group mt-4">
             <p class="info-label">Phone</p>

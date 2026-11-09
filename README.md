@@ -1,23 +1,23 @@
 # website
 
-# PVI Engineers
+# mouw Engineers
 
 aws_region   = "us-west-2"
-project_name = "pvi"
+project_name = "mouw"
 environment  = "prod"
 
-github_repository = "PVI-Engineers/website"
+github_repository = "mouw-Engineers/website"
 github_branch     = "main"
 
 # Keep blank because your current Terraform state already manages the hosted zone.
-domain_name    = "pviengineers.com"
+domain_name    = "mouwengineers.com"
 hosted_zone_id = ""
 api_subdomain  = "api"
 
 # Keep these exactly as current state resource names.
-frontend_bucket_name  = "pvi-engineers-prod-frontend"
-resume_bucket_name    = "pvi-engineers-prod-resumes"
-artifacts_bucket_name = "pvi-engineers-prod-artifacts"
+frontend_bucket_name  = "mouw-engineers-prod-frontend"
+resume_bucket_name    = "mouw-engineers-prod-resumes"
+artifacts_bucket_name = "mouw-engineers-prod-artifacts"
 
 # SSH disabled for now (recommended). No keypair needed.
 key_pair_name      = ""
@@ -27,32 +27,32 @@ instance_type      = "t2.micro"
 
 db_instance_class    = "db.t3.micro"
 db_allocated_storage = 20
-db_name              = "pvi_careers"
-db_username          = "pvi_admin"
+db_name              = "mouw_careers"
+db_username          = "mouw_admin"
 
 # IMPORTANT: RDS db_password must NOT contain /  @  "  or spaces.
-db_password = "PviDb#2026Secure1"
+db_password = "mouwDb#2026Secure1"
 
-mail_from_address = "no-reply@pviengineers.com"
-company_mail_to   = "hr@pviengineers.com"
+mail_from_address = "no-reply@mouwengineers.com"
+company_mail_to   = "hr@mouwengineers.com"
 ses_region        = "us-west-2"
 
-jwt_secret = "PVI_Prod_JWT_2026_kQ9vN7rT2mL5xC8aD4sH1eF6uB3p"
+jwt_secret = "mouw_Prod_JWT_2026_kQ9vN7rT2mL5xC8aD4sH1eF6uB3p"
 
-bootstrap_admin_username  = "admin@pvi.local"
+bootstrap_admin_username  = "admin@mouw.local"
 bootstrap_admin_password  = "Admin#2026Secure"
-bootstrap_admin_full_name = "PVI Admin"
-bootstrap_admin_email     = "admin@pviengineers.com"
+bootstrap_admin_full_name = "mouw Admin"
+bootstrap_admin_email     = "admin@mouwengineers.com"
 
-bootstrap_hr_username  = "hr@pvi.local"
+bootstrap_hr_username  = "hr@mouw.local"
 bootstrap_hr_password  = "Hr#2026Secure"
-bootstrap_hr_full_name = "PVI HR"
-bootstrap_hr_email     = "hr@pviengineers.com"
+bootstrap_hr_full_name = "mouw HR"
+bootstrap_hr_email     = "hr@mouwengineers.com"
 
-bootstrap_employee_username  = "employee@pvi.local"
+bootstrap_employee_username  = "employee@mouw.local"
 bootstrap_employee_password  = "Employee#2026Secure"
-bootstrap_employee_full_name = "PVI Employee"
-bootstrap_employee_email     = "employee@pviengineers.com"
+bootstrap_employee_full_name = "mouw Employee"
+bootstrap_employee_email     = "employee@mouwengineers.com"
 
 extra_frontend_urls = []
 

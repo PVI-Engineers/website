@@ -97,9 +97,9 @@ async function submitLogin() {
     <v-card class="glass-card pa-6 mt-6">
       <p class="mini-kicker mb-3">Default Accounts (Change in environment)</p>
       <ul class="quick-list">
-        <li>Admin: <code>admin@pvi.local</code> / <code>Admin@123</code></li>
-        <li>HR: <code>hr@pvi.local</code> / <code>Hr@123</code></li>
-        <li>Employee: <code>employee@pvi.local</code> / <code>Employee@123</code></li>
+        <li>Admin: <code>admin@mouw.local</code> / <code>Admin@123</code></li>
+        <li>HR: <code>hr@mouw.local</code> / <code>Hr@123</code></li>
+        <li>Employee: <code>employee@mouw.local</code> / <code>Employee@123</code></li>
       </ul>
     </v-card>
   </v-container>

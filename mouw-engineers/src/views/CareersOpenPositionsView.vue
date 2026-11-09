@@ -225,7 +225,7 @@ const filteredOpenings = computed(() =>
         <h3 class="job-title">No matching openings found</h3>
         <p class="card-copy">
           Try changing department filter or search keywords. You can also email
-          careers@pviengineers.com for upcoming opportunities.
+          careers@mouwengineering.com for upcoming opportunities.
         </p>
       </v-card>
     </section>

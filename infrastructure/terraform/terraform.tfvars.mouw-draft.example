@@ -62,6 +62,6 @@ alarm_email = "alerts@mouwengineering.com"
 # create_www_record is used only when use_custom_domain = true.
 create_www_record         = true
 rds_skip_final_snapshot   = true
-rds_deletion_protection   = false
+rds_deletion_protection   = true
 enable_waf                = true
 waf_rate_limit            = 2000

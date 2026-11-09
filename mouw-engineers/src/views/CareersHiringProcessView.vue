@@ -41,7 +41,7 @@ import { hiringFlow } from '../data/careersData'
 
       <div class="mt-4 d-flex ga-3 flex-wrap">
         <v-btn color="primary" to="/careers/open-positions">Go to open positions</v-btn>
-        <v-btn color="secondary" variant="tonal" href="mailto:careers@pviengineers.com?subject=Hiring%20Process%20Query">
+        <v-btn color="secondary" variant="tonal" href="mailto:careers@mouwengineering.com?subject=Hiring%20Process%20Query">
           Ask a question
         </v-btn>
       </div>
