@@ -200,8 +200,9 @@ jobs:
             echo "Removing all object versions from s3://${bucket}"
             while true; do
               response="$(aws s3api list-object-versions --bucket "$bucket" --output json 2>/dev/null || echo '{}')"
-              object_count="$(echo "$response" | jq '((.Versions // []) + (.DeleteMarkers // [])) | length')"
-              if [ "$object_count" -eq 0 ]; then
+              object_count="$(echo "$response" | jq '((.Versions // []) + (.DeleteMarkers // [])) | length' || echo 0)"
+              if [ "${object_count:-0}" -eq 0 ]; then
+                echo "Bucket ${bucket} has no remaining versions"
                 break
               fi
               payload="$(echo "$response" | jq -c '{Objects: ((.Versions // []) + (.DeleteMarkers // [])) | map({Key: .Key, VersionId: .VersionId})}')"
@@ -218,11 +219,11 @@ jobs:
           done
 
           for address in aws_s3_bucket.frontend aws_s3_bucket.resumes aws_s3_bucket.artifacts; do
-            bucket="$(terraform -chdir=infrastructure/terraform state show -no-color "$address" 2>/dev/null | awk -F'"' '/^ *bucket / { print $2; exit }')"
+            bucket="$(terraform -chdir=infrastructure/terraform state show -no-color "$address" 2>/dev/null | awk -F'"' '/^ *bucket / { print $2; exit }' || true)"
             empty_bucket "$bucket"
           done
 
-          identifier="$(terraform -chdir=infrastructure/terraform state show -no-color aws_db_instance.postgres 2>/dev/null | awk -F'"' '/^ *identifier / { print $2; exit }')"
+          identifier="$(terraform -chdir=infrastructure/terraform state show -no-color aws_db_instance.postgres 2>/dev/null | awk -F'"' '/^ *identifier / { print $2; exit }' || true)"
           if [ -z "$identifier" ]; then
             identifier="pvi-prod-postgres"
           fi
