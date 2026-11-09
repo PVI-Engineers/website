@@ -156,13 +156,30 @@ resource "terraform_data" "sync_bootstrap_passwords" {
         --instance-ids "${aws_instance.backend.id}" \
         --document-name "AWS-RunShellScript" \
         --comment "Sync portal bootstrap passwords" \
+        --timeout-seconds 1500 \
         --parameters "file://$PARAMS" \
         --query "Command.CommandId" \
         --output text)"
       rm -f "$PARAMS"
-      aws ssm wait command-executed \
-        --command-id "$COMMAND_ID" \
-        --instance-id "${aws_instance.backend.id}"
+      deadline=$((SECONDS + 1500))
+      while true; do
+        STATUS="$(aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" --query Status --output text 2>/dev/null || true)"
+        case "$STATUS" in
+          Success)
+            break
+            ;;
+          Failed|Cancelled|TimedOut|Cancelling)
+            echo "Server setup command $COMMAND_ID finished with $STATUS" >&2
+            aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" --query StandardErrorContent --output text >&2 || true
+            exit 1
+            ;;
+        esac
+        if [ "$SECONDS" -ge "$deadline" ]; then
+          echo "Server setup command $COMMAND_ID did not finish" >&2
+          exit 1
+        fi
+        sleep 15
+      done
     EOT
 }
 }
