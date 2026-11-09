@@ -100,6 +100,29 @@ resource "aws_cloudfront_response_headers_policy" "security" {
   }
 }
 
+resource "aws_cloudfront_function" "spa_router" {
+  name    = "${local.name_prefix}-spa-router"
+  runtime = "cloudfront-js-2.0"
+  comment = "Rewrite frontend routes to index.html without changing API responses."
+  publish = true
+  code    = <<-EOF
+    function handler(event) {
+      var request = event.request;
+      var uri = request.uri || "/";
+      if (uri.indexOf("/api/") === 0) {
+        return request;
+      }
+      var slash = uri.lastIndexOf("/");
+      var dot = uri.lastIndexOf(".");
+      if (dot > slash) {
+        return request;
+      }
+      request.uri = "/index.html";
+      return request;
+    }
+  EOF
+}
+
 resource "aws_cloudfront_distribution" "site" {
   enabled             = true
   is_ipv6_enabled     = true
@@ -141,6 +164,11 @@ resource "aws_cloudfront_distribution" "site" {
       }
     }
 
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.spa_router.arn
+    }
+
     min_ttl     = 0
     default_ttl = 3600
     max_ttl     = 86400
@@ -166,18 +194,6 @@ resource "aws_cloudfront_distribution" "site" {
     min_ttl     = 0
     default_ttl = 0
     max_ttl     = 0
-  }
-
-  custom_error_response {
-    error_code         = 403
-    response_code      = 200
-    response_page_path = "/index.html"
-  }
-
-  custom_error_response {
-    error_code         = 404
-    response_code      = 200
-    response_page_path = "/index.html"
   }
 
   restrictions {

@@ -153,7 +153,16 @@ jobs:
 
       - name: Terraform Plan
         if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE != 'destroy'
-        run: terraform -chdir=infrastructure/terraform plan -lock-timeout=300s -var-file="${TF_VARS_FILE}" -out=tfplan
+        run: |
+          terraform -chdir=infrastructure/terraform plan -lock-timeout=300s \
+            -var-file="${TF_VARS_FILE}" \
+            -var="bootstrap_admin_username=admin@pvi.local" \
+            -var="bootstrap_admin_password=Admin@123" \
+            -var="bootstrap_hr_username=hr@pvi.local" \
+            -var="bootstrap_hr_password=Hr@123" \
+            -var="bootstrap_employee_username=employee@pvi.local" \
+            -var="bootstrap_employee_password=Employee@123" \
+            -out=tfplan
 
       - name: Terraform Apply on Push
         if: steps.secrets_check.outputs.ready == 'true' && github.event_name == 'push'

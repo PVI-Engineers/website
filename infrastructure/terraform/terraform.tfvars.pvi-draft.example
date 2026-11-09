@@ -40,17 +40,17 @@ ses_region        = "us-west-2"
 jwt_secret = "REPLACE_WITH_LONG_RANDOM_JWT_SECRET_MIN_32_CHARS"
 
 bootstrap_admin_username  = "admin@pvi.local"
-bootstrap_admin_password  = "REPLACE_ADMIN_PASSWORD"
+bootstrap_admin_password  = "Admin@123"
 bootstrap_admin_full_name = "PVI Admin"
 bootstrap_admin_email     = "admin@pviengineers.com"
 
 bootstrap_hr_username  = "hr@pvi.local"
-bootstrap_hr_password  = "REPLACE_HR_PASSWORD"
+bootstrap_hr_password  = "Hr@123"
 bootstrap_hr_full_name = "PVI HR"
 bootstrap_hr_email     = "hr@pviengineers.com"
 
 bootstrap_employee_username  = "employee@pvi.local"
-bootstrap_employee_password  = "REPLACE_EMPLOYEE_PASSWORD"
+bootstrap_employee_password  = "Employee@123"
 bootstrap_employee_full_name = "PVI Employee"
 bootstrap_employee_email     = "employee@pviengineers.com"
 

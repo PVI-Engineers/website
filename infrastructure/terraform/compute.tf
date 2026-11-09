@@ -71,3 +71,46 @@ resource "aws_eip" "backend" {
   domain   = "vpc"
   instance = aws_instance.backend.id
 }
+
+resource "terraform_data" "sync_bootstrap_passwords" {
+  triggers_replace = {
+    instance_id       = aws_instance.backend.id
+    admin_username    = var.bootstrap_admin_username
+    admin_password    = var.bootstrap_admin_password
+    hr_username       = var.bootstrap_hr_username
+    hr_password       = var.bootstrap_hr_password
+    employee_username = var.bootstrap_employee_username
+    employee_password = var.bootstrap_employee_password
+  }
+
+  provisioner "local-exec" {
+    interpreter = ["bash", "-c"]
+    command = <<-EOT
+      set -euo pipefail
+      PARAMS="$(mktemp)"
+      cat > "$PARAMS" <<'EOF'
+      ${jsonencode({
+    commands = [templatefile("${path.module}/templates/sync_bootstrap_passwords.sh.tftpl", {
+      admin_username    = var.bootstrap_admin_username
+      admin_password    = var.bootstrap_admin_password
+      hr_username       = var.bootstrap_hr_username
+      hr_password       = var.bootstrap_hr_password
+      employee_username = var.bootstrap_employee_username
+      employee_password = var.bootstrap_employee_password
+    })]
+})}
+      EOF
+      COMMAND_ID="$(aws ssm send-command \
+        --instance-ids "${aws_instance.backend.id}" \
+        --document-name "AWS-RunShellScript" \
+        --comment "Sync portal bootstrap passwords" \
+        --parameters "file://$PARAMS" \
+        --query "Command.CommandId" \
+        --output text)"
+      rm -f "$PARAMS"
+      aws ssm wait command-executed \
+        --command-id "$COMMAND_ID" \
+        --instance-id "${aws_instance.backend.id}"
+    EOT
+}
+}

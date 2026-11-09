@@ -29,9 +29,7 @@ Update these placeholders with your real values:
   - `REPLACE_YOUR_PUBLIC_IP/32`
   - `REPLACE_WITH_STRONG_DB_PASSWORD`
   - `REPLACE_WITH_LONG_RANDOM_JWT_SECRET_MIN_32_CHARS`
-  - `REPLACE_ADMIN_PASSWORD`
-  - `REPLACE_HR_PASSWORD`
-  - `REPLACE_EMPLOYEE_PASSWORD`
+  - portal passwords are `Admin@123`, `Hr@123`, and `Employee@123`
   - (Optional) add local/staging origins in `extra_frontend_urls` for S3 upload CORS
 
 - `AWS_DEPLOYMENT.md` command placeholders (when running fallback manual deploy):
