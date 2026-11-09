@@ -1,4 +1,4 @@
-# AWS Terraform Stack - PVI Engineers
+# AWS Terraform Stack - MOUW Engineering and Land Surveyors
 
 This Terraform stack provisions the complete production-grade AWS setup requested:
 
@@ -31,7 +31,7 @@ This Terraform stack provisions the complete production-grade AWS setup requeste
 ## Usage
 
 1. Copy `terraform.tfvars.example` to `terraform.tfvars`
-   - or start from `terraform.tfvars.pvi-draft.example` (pre-filled for this project naming)
+   - or start from `terraform.tfvars.mouw-draft.example` (pre-filled for this project naming)
 2. Fill real values (bucket names, DB password, JWT secret, etc.)
    - Leave `use_custom_domain = false` to use the CloudFront domain. Open the `frontend_url` output after apply.
    - When you have a domain, set `use_custom_domain = true` and `domain_name` to the apex without `www`

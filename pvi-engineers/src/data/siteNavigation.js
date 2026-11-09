@@ -305,7 +305,7 @@ const companyButtons = [
     path: '/about-us',
     icon: 'mdi-domain',
     intro:
-      'Learn about PVI ENGINEERS, our mission, values, leadership mindset, and commitment to modern infrastructure delivery.',
+      'Learn about MOUW Engineering and Land Surveyors, our mission, values, leadership mindset, and commitment to modern infrastructure delivery.',
     focusAreas: [
       'Engineering excellence with delivery accountability',
       'Collaborative culture across disciplines',
@@ -453,7 +453,7 @@ const companyButtons = [
     path: '/careers',
     icon: 'mdi-account-tie-outline',
     intro:
-      'Explore current openings, hiring steps, and work culture at PVI ENGINEERS as we grow our infrastructure teams.',
+      'Explore current openings, hiring steps, and work culture at MOUW Engineering and Land Surveyors as we grow our infrastructure teams.',
     focusAreas: [
       'Role-specific opportunities in civil, water, drainage, and survey',
       'Transparent hiring process with clear communication',

@@ -199,7 +199,7 @@ onMounted(loadApplications)
           <p class="meta-label mt-2">Key Skills</p>
           <p class="meta-value">{{ application.keySkills }}</p>
 
-          <p class="meta-label mt-2">Why Join PVI</p>
+          <p class="meta-label mt-2">Why Join MOUW</p>
           <p class="meta-value">{{ application.whyJoin }}</p>
 
           <p class="meta-label mt-2">Additional Information</p>

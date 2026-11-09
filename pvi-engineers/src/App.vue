@@ -13,7 +13,7 @@ const activePath = computed(() => route.path)
 const desktopRows = [serviceButtons, companyButtons]
 const desktopLabels = ['Service Domains', 'Company Sections']
 const year = new Date().getFullYear()
-const isDarkTheme = computed(() => theme.global.name.value === 'pviDark')
+const isDarkTheme = computed(() => theme.global.name.value === 'mouwDark')
 const themeToggleIcon = computed(() =>
   isDarkTheme.value ? 'mdi-white-balance-sunny' : 'mdi-weather-night',
 )
@@ -35,17 +35,17 @@ function previewText(text, max = 106) {
 }
 
 function applyTheme(themeName) {
-  const selected = themeName === 'pviDark' ? 'pviDark' : 'pviLight'
-  const mode = selected === 'pviDark' ? 'dark' : 'light'
+  const selected = themeName === 'mouwDark' ? 'mouwDark' : 'mouwLight'
+  const mode = selected === 'mouwDark' ? 'dark' : 'light'
 
   theme.global.name.value = selected
   document.body.setAttribute('data-site-theme', mode)
   document.documentElement.style.colorScheme = mode
-  window.localStorage.setItem('pvi-theme', selected)
+  window.localStorage.setItem('mouw-theme', selected)
 }
 
 function toggleTheme() {
-  applyTheme(isDarkTheme.value ? 'pviLight' : 'pviDark')
+  applyTheme(isDarkTheme.value ? 'mouwLight' : 'mouwDark')
 }
 
 watch(
@@ -56,13 +56,13 @@ watch(
 )
 
 onMounted(() => {
-  const saved = window.localStorage.getItem('pvi-theme')
-  applyTheme(saved === 'pviDark' || saved === 'pviLight' ? saved : 'pviLight')
+  const saved = window.localStorage.getItem('mouw-theme')
+  applyTheme(saved === 'mouwDark' || saved === 'mouwLight' ? saved : 'mouwLight')
 })
 </script>
 
 <template>
-  <v-app class="pvi-app">
+  <v-app class="mouw-app">
     <div class="ambient-lights" aria-hidden="true">
       <span class="light-orb orb-one"></span>
       <span class="light-orb orb-two"></span>
@@ -157,9 +157,9 @@ onMounted(() => {
     <v-app-bar class="top-bar" flat height="110">
       <v-container class="top-inner">
         <router-link class="brand-link" to="/">
-          <span class="brand-mark">PVI</span>
+          <span class="brand-mark">MOUW</span>
           <span class="brand-copy">
-            <strong>PVI ENGINEERS</strong>
+            <strong>MOUW Engineering and Land Surveyors</strong>
             <small>Road, Water, Drainage & Civil Systems</small>
           </span>
         </router-link>
@@ -283,12 +283,12 @@ onMounted(() => {
       <v-container class="py-8">
         <v-row>
           <v-col cols="12" md="4">
-            <h3 class="footer-title">PVI ENGINEERS</h3>
+            <h3 class="footer-title">MOUW Engineering and Land Surveyors</h3>
             <p class="footer-copy">
               Futuristic civil engineering website with dedicated pages for every menu and dropdown
               option.
             </p>
-            <p class="footer-copy mt-3">Email: contact@pviengineers.com</p>
+            <p class="footer-copy mt-3">Email: contact@mouwengineering.com</p>
             <p class="footer-copy">Phone: +1 6055920819</p>
           </v-col>
 
@@ -324,7 +324,7 @@ onMounted(() => {
         <v-divider class="my-6" />
         <div class="footer-bottom">
           <p class="footer-meta">
-            © {{ year }} PVI ENGINEERS. All rights reserved.
+            © {{ year }} MOUW Engineering and Land Surveyors. All rights reserved.
           </p>
         </div>
       </v-container>
@@ -333,7 +333,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.pvi-app {
+.mouw-app {
   background: transparent;
 }
 
@@ -398,11 +398,12 @@ onMounted(() => {
 .brand-mark {
   display: grid;
   place-items: center;
-  width: 44px;
+  width: 62px;
   height: 44px;
   border-radius: 14px;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
   color: var(--brand-mark-text);
   background: var(--brand-mark-gradient);
 }
@@ -415,8 +416,9 @@ onMounted(() => {
 
 .brand-copy strong {
   color: var(--brand-title);
-  font-size: 0.95rem;
-  letter-spacing: 0.07em;
+  max-width: 280px;
+  font-size: 0.82rem;
+  letter-spacing: 0.01em;
 }
 
 .brand-copy small {

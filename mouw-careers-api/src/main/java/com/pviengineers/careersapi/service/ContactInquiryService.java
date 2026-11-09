@@ -113,7 +113,7 @@ public class ContactInquiryService {
     private String generateInquiryRef() {
         String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String randomPart = UUID.randomUUID().toString().substring(0, 6).toUpperCase(Locale.ROOT);
-        return "PVI-CON-" + datePart + "-" + randomPart;
+        return "MOUW-CON-" + datePart + "-" + randomPart;
     }
 
     private boolean isMailConfigurationReady() {
@@ -157,7 +157,7 @@ public class ContactInquiryService {
             MimeMessageHelper helper = new MimeMessageHelper(message, false, StandardCharsets.UTF_8.name());
             helper.setFrom(senderAddress);
             helper.setTo(inquiry.getEmail());
-            helper.setSubject("PVI ENGINEERS | Inquiry Received | " + inquiry.getInquiryRef());
+            helper.setSubject("MOUW Engineering and Land Surveyors | Inquiry Received | " + inquiry.getInquiryRef());
             helper.setText(buildSubmitterMailBody(inquiry), false);
             dispatchMimeMessage(message);
         } catch (Exception ex) {
@@ -243,7 +243,7 @@ public class ContactInquiryService {
         return """
                 Dear %s,
 
-                Thank you for contacting PVI ENGINEERS.
+                Thank you for contacting MOUW Engineering and Land Surveyors.
 
                 We have received your inquiry successfully.
                 Inquiry Reference: %s
@@ -252,7 +252,7 @@ public class ContactInquiryService {
                 Our team will review your message and connect with you shortly.
 
                 Regards,
-                Team PVI ENGINEERS
+                Team MOUW Engineering and Land Surveyors
                 """.formatted(
                 inquiry.getName(),
                 inquiry.getInquiryRef(),

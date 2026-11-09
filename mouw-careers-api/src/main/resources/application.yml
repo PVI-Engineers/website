@@ -1,8 +1,8 @@
 spring:
   application:
-    name: pvi-careers-api
+    name: mouw-careers-api
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/pvi_careers}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/mouw_careers}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
   jpa:
@@ -39,8 +39,8 @@ app:
   frontend-urls: ${FRONTEND_URLS:http://localhost:5173}
   mail:
     provider: ${APP_MAIL_PROVIDER:smtp}
-    company-address: ${COMPANY_MAIL_TO:hr@pviengineers.com}
-    contact-address: ${CONTACT_MAIL_TO:contact@pviengineers.com}
+    company-address: ${COMPANY_MAIL_TO:hr@mouwengineering.com}
+    contact-address: ${CONTACT_MAIL_TO:contact@mouwengineering.com}
     from-address: ${MAIL_FROM:}
     ses:
       region: ${APP_MAIL_SES_REGION:${AWS_REGION:us-west-2}}
@@ -52,7 +52,7 @@ app:
       key-prefix: ${APP_STORAGE_S3_KEY_PREFIX:resumes}
       presign-expiration-seconds: ${APP_STORAGE_S3_PRESIGN_EXPIRATION_SECONDS:900}
   security:
-    jwt-secret: ${APP_JWT_SECRET:ThisIsAVeryLongDevelopmentJwtSecretForPviCareersPortal123456}
+    jwt-secret: ${APP_JWT_SECRET:ThisIsAVeryLongDevelopmentJwtSecretForMouwCareersPortal123456}
     jwt-expiration-ms: ${APP_JWT_EXPIRATION_MS:86400000}
     rate-limit:
       enabled: ${APP_RATE_LIMIT_ENABLED:true}
@@ -63,17 +63,17 @@ app:
       health-per-minute: ${APP_RATE_LIMIT_HEALTH_PER_MINUTE:120}
   bootstrap:
     admin:
-      username: ${APP_BOOTSTRAP_ADMIN_USERNAME:admin@pvi.local}
+      username: ${APP_BOOTSTRAP_ADMIN_USERNAME:admin@mouw.local}
       password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:Admin@123}
-      full-name: ${APP_BOOTSTRAP_ADMIN_FULL_NAME:PVI Admin}
-      email: ${APP_BOOTSTRAP_ADMIN_EMAIL:admin@pviengineers.com}
+      full-name: ${APP_BOOTSTRAP_ADMIN_FULL_NAME:MOUW Admin}
+      email: ${APP_BOOTSTRAP_ADMIN_EMAIL:admin@mouwengineering.com}
     hr:
-      username: ${APP_BOOTSTRAP_HR_USERNAME:hr@pvi.local}
+      username: ${APP_BOOTSTRAP_HR_USERNAME:hr@mouw.local}
       password: ${APP_BOOTSTRAP_HR_PASSWORD:Hr@123}
-      full-name: ${APP_BOOTSTRAP_HR_FULL_NAME:PVI HR}
-      email: ${APP_BOOTSTRAP_HR_EMAIL:hr@pviengineers.com}
+      full-name: ${APP_BOOTSTRAP_HR_FULL_NAME:MOUW HR}
+      email: ${APP_BOOTSTRAP_HR_EMAIL:hr@mouwengineering.com}
     employee:
-      username: ${APP_BOOTSTRAP_EMPLOYEE_USERNAME:employee@pvi.local}
+      username: ${APP_BOOTSTRAP_EMPLOYEE_USERNAME:employee@mouw.local}
       password: ${APP_BOOTSTRAP_EMPLOYEE_PASSWORD:Employee@123}
-      full-name: ${APP_BOOTSTRAP_EMPLOYEE_FULL_NAME:PVI Employee}
-      email: ${APP_BOOTSTRAP_EMPLOYEE_EMAIL:employee@pviengineers.com}
+      full-name: ${APP_BOOTSTRAP_EMPLOYEE_FULL_NAME:MOUW Employee}
+      email: ${APP_BOOTSTRAP_EMPLOYEE_EMAIL:employee@mouwengineering.com}

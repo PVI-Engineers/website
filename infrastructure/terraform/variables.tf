@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "project_name" {
   description = "Project identifier used in resource names and tags."
   type        = string
-  default     = "pvi"
+  default     = "mouw"
 }
 
 variable "environment" {
@@ -118,13 +118,13 @@ variable "ec2_ami_id" {
 variable "db_name" {
   description = "RDS PostgreSQL database name."
   type        = string
-  default     = "pvi_careers"
+  default     = "mouw_careers"
 }
 
 variable "db_username" {
   description = "RDS PostgreSQL master username."
   type        = string
-  default     = "pvi_admin"
+  default     = "mouw_admin"
 }
 
 variable "db_password" {
@@ -165,6 +165,12 @@ variable "company_mail_to" {
   type        = string
 }
 
+variable "contact_mail_to" {
+  description = "Public contact inbox used for contact-form delivery."
+  type        = string
+  default     = "contact@mouwengineering.com"
+}
+
 variable "ses_region" {
   description = "AWS SES region where identities are created and email is sent."
   type        = string
@@ -180,7 +186,7 @@ variable "jwt_secret" {
 variable "bootstrap_admin_username" {
   description = "Bootstrap admin login username."
   type        = string
-  default     = "admin@pvi.local"
+  default     = "admin@mouw.local"
 }
 
 variable "bootstrap_admin_password" {
@@ -193,19 +199,19 @@ variable "bootstrap_admin_password" {
 variable "bootstrap_admin_full_name" {
   description = "Bootstrap admin full name."
   type        = string
-  default     = "PVI Admin"
+  default     = "MOUW Admin"
 }
 
 variable "bootstrap_admin_email" {
   description = "Bootstrap admin email."
   type        = string
-  default     = "admin@pviengineers.com"
+  default     = "admin@mouwengineering.com"
 }
 
 variable "bootstrap_hr_username" {
   description = "Bootstrap HR login username."
   type        = string
-  default     = "hr@pvi.local"
+  default     = "hr@mouw.local"
 }
 
 variable "bootstrap_hr_password" {
@@ -218,19 +224,19 @@ variable "bootstrap_hr_password" {
 variable "bootstrap_hr_full_name" {
   description = "Bootstrap HR full name."
   type        = string
-  default     = "PVI HR"
+  default     = "MOUW HR"
 }
 
 variable "bootstrap_hr_email" {
   description = "Bootstrap HR email."
   type        = string
-  default     = "hr@pviengineers.com"
+  default     = "hr@mouwengineering.com"
 }
 
 variable "bootstrap_employee_username" {
   description = "Bootstrap employee login username."
   type        = string
-  default     = "employee@pvi.local"
+  default     = "employee@mouw.local"
 }
 
 variable "bootstrap_employee_password" {
@@ -243,13 +249,13 @@ variable "bootstrap_employee_password" {
 variable "bootstrap_employee_full_name" {
   description = "Bootstrap employee full name."
   type        = string
-  default     = "PVI Employee"
+  default     = "MOUW Employee"
 }
 
 variable "bootstrap_employee_email" {
   description = "Bootstrap employee email."
   type        = string
-  default     = "employee@pviengineers.com"
+  default     = "employee@mouwengineering.com"
 }
 
 variable "extra_frontend_urls" {

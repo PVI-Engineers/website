@@ -145,7 +145,7 @@ resource "aws_iam_role_policy" "github_actions_deploy" {
           "cloudfront:CreateInvalidation",
           "cloudfront:GetInvalidation"
         ]
-        Resource = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.site.id}"
+        Resource = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.public.id}"
       },
       {
         Sid    = "SsmSendDeployCommand"

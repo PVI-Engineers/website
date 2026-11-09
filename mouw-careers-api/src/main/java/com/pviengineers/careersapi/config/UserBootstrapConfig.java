@@ -19,15 +19,15 @@ public class UserBootstrapConfig {
             PasswordEncoder passwordEncoder,
             @Value("${app.bootstrap.admin.username:admin@pvi.local}") String adminUsername,
             @Value("${app.bootstrap.admin.password:Admin@123}") String adminPassword,
-            @Value("${app.bootstrap.admin.full-name:PVI Admin}") String adminFullName,
+            @Value("${app.bootstrap.admin.full-name:MOUW Admin}") String adminFullName,
             @Value("${app.bootstrap.admin.email:admin@pviengineers.com}") String adminEmail,
             @Value("${app.bootstrap.hr.username:hr@pvi.local}") String hrUsername,
             @Value("${app.bootstrap.hr.password:Hr@123}") String hrPassword,
-            @Value("${app.bootstrap.hr.full-name:PVI HR}") String hrFullName,
+            @Value("${app.bootstrap.hr.full-name:MOUW HR}") String hrFullName,
             @Value("${app.bootstrap.hr.email:hr@pviengineers.com}") String hrEmail,
             @Value("${app.bootstrap.employee.username:employee@pvi.local}") String employeeUsername,
             @Value("${app.bootstrap.employee.password:Employee@123}") String employeePassword,
-            @Value("${app.bootstrap.employee.full-name:PVI Employee}") String employeeFullName,
+            @Value("${app.bootstrap.employee.full-name:MOUW Employee}") String employeeFullName,
             @Value("${app.bootstrap.employee.email:employee@pviengineers.com}") String employeeEmail
     ) {
         return args -> {

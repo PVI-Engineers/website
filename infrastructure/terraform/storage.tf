@@ -1,16 +1,16 @@
 resource "aws_s3_bucket" "frontend" {
   bucket        = var.frontend_bucket_name
-  force_destroy = false
+  force_destroy = true
 }
 
 resource "aws_s3_bucket" "resumes" {
   bucket        = var.resume_bucket_name
-  force_destroy = false
+  force_destroy = true
 }
 
 resource "aws_s3_bucket" "artifacts" {
   bucket        = var.artifacts_bucket_name
-  force_destroy = false
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_ownership_controls" "frontend" {
@@ -115,7 +115,7 @@ resource "aws_s3_bucket_cors_configuration" "resumes" {
     allowed_methods = ["PUT", "GET", "HEAD"]
     allowed_origins = distinct(concat(
       local.frontend_urls,
-      ["https://${aws_cloudfront_distribution.site.domain_name}"]
+      ["https://${aws_cloudfront_distribution.public.domain_name}"]
     ))
     expose_headers  = ["ETag"]
     max_age_seconds = 3000

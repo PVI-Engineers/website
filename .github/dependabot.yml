@@ -7,13 +7,13 @@ updates:
     open-pull-requests-limit: 5
 
   - package-ecosystem: "npm"
-    directory: "/pvi-engineers"
+    directory: "/mouw-engineers"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
 
   - package-ecosystem: "maven"
-    directory: "/pvi-careers-api"
+    directory: "/mouw-careers-api"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5

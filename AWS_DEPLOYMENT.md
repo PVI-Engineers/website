@@ -1,4 +1,4 @@
-# PVI Engineers - Full AWS Deployment Guide
+# MOUW Engineering and Land Surveyors - Full AWS Deployment Guide
 
 This guide matches your requested stack:
 
@@ -22,7 +22,7 @@ This guide matches your requested stack:
 
 Update these placeholders with your real values:
 
-- `infrastructure/terraform/terraform.tfvars.pvi-draft.example`
+- `infrastructure/terraform/terraform.tfvars.mouw-draft.example`
   - leave `use_custom_domain = false` until a new domain is ready
   - `REPLACE_GITHUB_ORG/REPLACE_REPO`
   - `REPLACE_EC2_KEYPAIR_NAME`
@@ -81,7 +81,7 @@ Set these GitHub secrets first:
 - `AWS_ROLE_TO_ASSUME_INFRA`
 - `AWS_REGION`
 - `TF_STATE_BUCKET`
-- `TF_STATE_KEY` (example: `pvi/prod/terraform.tfstate`)
+- `TF_STATE_KEY` (keep the current value; do not rename the state file)
 - `TF_VARS_CONTENT` (full content of your `terraform.tfvars`)
 
 `AWS_ROLE_TO_ASSUME_INFRA` should be a high-privilege infra role (or admin role) that can create VPC, EC2, RDS, CloudFront, Route53, IAM, S3, SES, and CloudWatch resources.
@@ -109,7 +109,7 @@ terraform init \
   -backend-config="region=<aws-region>" \
   -backend-config="use_lockfile=true" \
   -backend-config="encrypt=true"
-copy terraform.tfvars.pvi-draft.example terraform.tfvars
+copy terraform.tfvars.mouw-draft.example terraform.tfvars
 terraform plan
 terraform apply
 ```
@@ -129,11 +129,11 @@ Workflow `aws-cicd` will build frontend/backend in GitHub and deploy to AWS (no 
 Optional manual fallback deployment (only if you don't want CI for first deploy):
 
 ```bash
-aws s3 cp pvi-careers-api/target/pvi-careers-api-0.0.1-SNAPSHOT.jar s3://<ARTIFACT_BUCKET>/backend/pvi-careers-api.jar
+aws s3 cp mouw-careers-api/target/mouw-careers-api-0.0.1-SNAPSHOT.jar s3://<ARTIFACT_BUCKET>/backend/mouw-careers-api.jar
 aws ssm send-command \
   --document-name "AWS-RunShellScript" \
   --instance-ids "<EC2_INSTANCE_ID>" \
-  --parameters commands="sudo /usr/local/bin/deploy-backend.sh <ARTIFACT_BUCKET> backend/pvi-careers-api.jar"
+  --parameters commands="sudo /usr/local/bin/deploy-backend.sh <ARTIFACT_BUCKET> backend/mouw-careers-api.jar"
 ```
 
 ## 7) DNS + SSL Notes
@@ -198,7 +198,7 @@ Nginx receives `/api/*` and proxies to Spring Boot on port `8080`.
    - company email received (SES)
    - applicant thank-you email received
 5. Check logs:
-   - CloudWatch log groups `/pvi-prod/backend` and `/pvi-prod/nginx`
+   - CloudWatch log groups `/${project_name}-${environment}/backend` and `/${project_name}-${environment}/nginx`
 
 ## 12) Production Hardening (recommended)
 

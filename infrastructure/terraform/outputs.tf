@@ -21,15 +21,15 @@ output "api_origin_domain" {
 }
 
 output "cloudfront_distribution_id" {
-  value = aws_cloudfront_distribution.site.id
+  value = aws_cloudfront_distribution.public.id
 }
 
 output "cloudfront_domain_name" {
-  value = aws_cloudfront_distribution.site.domain_name
+  value = aws_cloudfront_distribution.public.domain_name
 }
 
 output "frontend_url" {
-  value       = var.use_custom_domain ? "https://${var.domain_name}" : "https://${aws_cloudfront_distribution.site.domain_name}"
+  value       = var.use_custom_domain ? "https://${var.domain_name}" : "https://${aws_cloudfront_distribution.public.domain_name}"
   description = "Public site URL. CloudFront distribution domain unless use_custom_domain is true."
 }
 

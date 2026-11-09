@@ -41,6 +41,7 @@ resource "aws_instance" "backend" {
     artifact_bucket_name         = aws_s3_bucket.artifacts.bucket
     frontend_urls_csv            = local.frontend_urls_csv
     company_mail_to              = var.company_mail_to
+    contact_mail_to              = var.contact_mail_to
     mail_from_address            = var.mail_from_address
     jwt_secret                   = var.jwt_secret
     ses_region                   = var.ses_region
@@ -78,13 +79,26 @@ resource "aws_eip" "backend" {
 
 resource "terraform_data" "sync_bootstrap_passwords" {
   triggers_replace = {
-    instance_id       = aws_instance.backend.id
-    admin_username    = var.bootstrap_admin_username
-    admin_password    = var.bootstrap_admin_password
-    hr_username       = var.bootstrap_hr_username
-    hr_password       = var.bootstrap_hr_password
-    employee_username = var.bootstrap_employee_username
-    employee_password = var.bootstrap_employee_password
+    instance_id        = aws_instance.backend.id
+    runtime_layout     = "mouw"
+    db_host            = aws_db_instance.postgres.address
+    db_name            = var.db_name
+    db_username        = var.db_username
+    admin_username     = var.bootstrap_admin_username
+    admin_password     = var.bootstrap_admin_password
+    admin_full_name    = var.bootstrap_admin_full_name
+    admin_email        = var.bootstrap_admin_email
+    hr_username        = var.bootstrap_hr_username
+    hr_password        = var.bootstrap_hr_password
+    hr_full_name       = var.bootstrap_hr_full_name
+    hr_email           = var.bootstrap_hr_email
+    employee_username  = var.bootstrap_employee_username
+    employee_password  = var.bootstrap_employee_password
+    employee_full_name = var.bootstrap_employee_full_name
+    employee_email     = var.bootstrap_employee_email
+    mail_from_address  = var.mail_from_address
+    company_mail_to    = var.company_mail_to
+    contact_mail_to    = var.contact_mail_to
   }
 
   provisioner "local-exec" {
@@ -108,12 +122,33 @@ resource "terraform_data" "sync_bootstrap_passwords" {
       cat > "$PARAMS" <<'EOF'
       ${jsonencode({
     commands = [templatefile("${path.module}/templates/sync_bootstrap_passwords.sh.tftpl", {
-      admin_username    = var.bootstrap_admin_username
-      admin_password    = var.bootstrap_admin_password
-      hr_username       = var.bootstrap_hr_username
-      hr_password       = var.bootstrap_hr_password
-      employee_username = var.bootstrap_employee_username
-      employee_password = var.bootstrap_employee_password
+      aws_region                   = var.aws_region
+      db_host                      = aws_db_instance.postgres.address
+      db_port                      = aws_db_instance.postgres.port
+      db_name                      = var.db_name
+      db_username                  = var.db_username
+      db_password                  = var.db_password
+      resume_bucket_name           = aws_s3_bucket.resumes.bucket
+      frontend_urls_csv            = local.frontend_urls_csv
+      company_mail_to              = var.company_mail_to
+      contact_mail_to              = var.contact_mail_to
+      mail_from_address            = var.mail_from_address
+      jwt_secret                   = var.jwt_secret
+      ses_region                   = var.ses_region
+      bootstrap_admin_username     = var.bootstrap_admin_username
+      bootstrap_admin_password     = var.bootstrap_admin_password
+      bootstrap_admin_full_name    = var.bootstrap_admin_full_name
+      bootstrap_admin_email        = var.bootstrap_admin_email
+      bootstrap_hr_username        = var.bootstrap_hr_username
+      bootstrap_hr_password        = var.bootstrap_hr_password
+      bootstrap_hr_full_name       = var.bootstrap_hr_full_name
+      bootstrap_hr_email           = var.bootstrap_hr_email
+      bootstrap_employee_username  = var.bootstrap_employee_username
+      bootstrap_employee_password  = var.bootstrap_employee_password
+      bootstrap_employee_full_name = var.bootstrap_employee_full_name
+      bootstrap_employee_email     = var.bootstrap_employee_email
+      cloudwatch_log_group_backend = aws_cloudwatch_log_group.backend.name
+      cloudwatch_log_group_nginx   = aws_cloudwatch_log_group.nginx.name
     })]
 })}
       EOF

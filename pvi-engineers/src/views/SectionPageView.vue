@@ -29,7 +29,7 @@ function hashText(input) {
 }
 
 const visual = computed(() => {
-  const source = page.value?.sectionPath ?? page.value?.path ?? 'pvi'
+  const source = page.value?.sectionPath ?? page.value?.path ?? 'mouw'
   const pair = colorPairs[hashText(source) % colorPairs.length]
 
   return {
@@ -56,7 +56,7 @@ function getRelatedPage(path) {
       <h1 class="page-title">This section is currently unavailable</h1>
       <p class="page-copy">
         The requested page may have moved. Please use the top navigation menu to continue
-        exploring PVI ENGINEERS.
+        exploring MOUW Engineering and Land Surveyors.
       </p>
       <v-btn class="mt-6" color="primary" to="/">Back to Home</v-btn>
     </v-card>
@@ -72,7 +72,7 @@ function getRelatedPage(path) {
               <v-chip v-if="page.parent" color="secondary" variant="tonal">
                 Parent: {{ page.parent.label }}
               </v-chip>
-              <v-chip color="info" variant="outlined">PVI ENGINEERS</v-chip>
+              <v-chip color="info" variant="outlined">MOUW Engineering and Land Surveyors</v-chip>
             </div>
           </v-col>
 
@@ -174,7 +174,7 @@ function getRelatedPage(path) {
             </p>
           </v-col>
           <v-col cols="12" md="4" class="d-flex justify-md-end">
-            <v-btn color="primary" size="large" to="/contact">Contact PVI ENGINEERS</v-btn>
+            <v-btn color="primary" size="large" to="/contact">Contact MOUW Engineering and Land Surveyors</v-btn>
           </v-col>
         </v-row>
       </v-card>

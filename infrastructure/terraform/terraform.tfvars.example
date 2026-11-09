@@ -1,7 +1,7 @@
 aws_region = "us-west-2"
-project_name = "pvi"
+project_name = "mouw"
 environment = "prod"
-github_repository = "PVI-Engineers/website"
+github_repository = "REPLACE_GITHUB_OWNER/REPLACE_REPO"
 github_branch = "main"
 
 # Site is served on the CloudFront domain (xxxx.cloudfront.net).
@@ -12,43 +12,44 @@ use_custom_domain = false
 # api_subdomain = "api"
 # create_www_record = true
 
-frontend_bucket_name = "pvi-prod-frontend"
-resume_bucket_name = "pvi-prod-resumes"
-artifacts_bucket_name = "pvi-prod-artifacts"
+frontend_bucket_name = "mouw-engineers-prod-frontend"
+resume_bucket_name = "mouw-engineers-prod-resumes"
+artifacts_bucket_name = "mouw-engineers-prod-artifacts"
 
 key_pair_name = "your-ec2-keypair"
 admin_ingress_cidr = "0.0.0.0/0"
 enable_ssh_ingress = false
 
-db_name = "pvi_careers"
-db_username = "pvi_admin"
+db_name = "mouw_careers"
+db_username = "mouw_admin"
 # RDS password cannot contain: /  @  "  or spaces.
 db_password = "ReplaceWithStrongPassword123!"
 
-mail_from_address = "no-reply@pviengineers.com"
-company_mail_to = "hr@pviengineers.com"
+mail_from_address = "no-reply@mouwengineering.com"
+company_mail_to = "hr@mouwengineering.com"
+contact_mail_to = "contact@mouwengineering.com"
 ses_region = "us-west-2"
 
 jwt_secret = "ReplaceWithLongStrongJwtSecretAtLeast32Chars"
 
-bootstrap_admin_username = "admin@pvi.local"
+bootstrap_admin_username = "admin@mouw.local"
 bootstrap_admin_password = "Admin@123"
-bootstrap_admin_full_name = "PVI Admin"
-bootstrap_admin_email = "admin@pviengineers.com"
+bootstrap_admin_full_name = "MOUW Admin"
+bootstrap_admin_email = "admin@mouwengineering.com"
 
-bootstrap_hr_username = "hr@pvi.local"
+bootstrap_hr_username = "hr@mouw.local"
 bootstrap_hr_password = "Hr@123"
-bootstrap_hr_full_name = "PVI HR"
-bootstrap_hr_email = "hr@pviengineers.com"
+bootstrap_hr_full_name = "MOUW HR"
+bootstrap_hr_email = "hr@mouwengineering.com"
 
-bootstrap_employee_username = "employee@pvi.local"
+bootstrap_employee_username = "employee@mouw.local"
 bootstrap_employee_password = "Employee@123"
-bootstrap_employee_full_name = "PVI Employee"
-bootstrap_employee_email = "employee@pviengineers.com"
+bootstrap_employee_full_name = "MOUW Employee"
+bootstrap_employee_email = "employee@mouwengineering.com"
 
 extra_frontend_urls = []
 
-alarm_email = "alerts@pviengineers.com"
+alarm_email = "alerts@mouwengineering.com"
 enable_waf = true
 waf_rate_limit = 2000
-rds_deletion_protection = true
+rds_deletion_protection = false

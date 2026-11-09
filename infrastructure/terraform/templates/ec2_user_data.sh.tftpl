@@ -15,11 +15,11 @@ else
   fi
 fi
 
-mkdir -p /opt/pvi
-touch /var/log/pvi-backend.log
-chown ec2-user:ec2-user /var/log/pvi-backend.log
+mkdir -p /opt/mouw
+touch /var/log/mouw-backend.log
+chown ec2-user:ec2-user /var/log/mouw-backend.log
 
-cat > /opt/pvi/application.env <<'EOF'
+cat > /opt/mouw/application.env <<'EOF'
 SPRING_DATASOURCE_URL=jdbc:postgresql://${db_host}:${db_port}/${db_name}
 SPRING_DATASOURCE_USERNAME=${db_username}
 SPRING_DATASOURCE_PASSWORD=${db_password}
@@ -28,6 +28,7 @@ APP_MAIL_PROVIDER=ses
 APP_MAIL_SES_REGION=${ses_region}
 MAIL_FROM=${mail_from_address}
 COMPANY_MAIL_TO=${company_mail_to}
+CONTACT_MAIL_TO=${contact_mail_to}
 
 APP_STORAGE_PROVIDER=s3
 APP_STORAGE_S3_BUCKET=${resume_bucket_name}
@@ -56,21 +57,21 @@ APP_BOOTSTRAP_EMPLOYEE_EMAIL=${bootstrap_employee_email}
 SERVER_PORT=8080
 EOF
 
-cat > /etc/systemd/system/pvi-careers-api.service <<'EOF'
+cat > /etc/systemd/system/mouw-careers-api.service <<'EOF'
 [Unit]
-Description=PVI Careers Spring Boot API
+Description=MOUW Careers Spring Boot API
 After=network.target
-ConditionPathExists=/opt/pvi/pvi-careers-api.jar
+ConditionPathExists=/opt/mouw/mouw-careers-api.jar
 
 [Service]
 User=ec2-user
 Group=ec2-user
-WorkingDirectory=/opt/pvi
-EnvironmentFile=/opt/pvi/application.env
+WorkingDirectory=/opt/mouw
+EnvironmentFile=/opt/mouw/application.env
 Environment=JAVA_OPTS=-Xms128m -Xmx512m
-ExecStart=/bin/bash -c '/usr/bin/java $JAVA_OPTS -jar /opt/pvi/pvi-careers-api.jar'
-StandardOutput=append:/var/log/pvi-backend.log
-StandardError=append:/var/log/pvi-backend.log
+ExecStart=/bin/bash -c '/usr/bin/java $JAVA_OPTS -jar /opt/mouw/mouw-careers-api.jar'
+StandardOutput=append:/var/log/mouw-backend.log
+StandardError=append:/var/log/mouw-backend.log
 Restart=always
 RestartSec=5
 
@@ -78,7 +79,7 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
 
-cat > /etc/nginx/conf.d/pvi-api.conf <<'EOF'
+cat > /etc/nginx/conf.d/mouw-api.conf <<'EOF'
 limit_req_zone $binary_remote_addr zone=api_rate:10m rate=20r/s;
 
 server {
@@ -107,14 +108,14 @@ cat > /usr/local/bin/deploy-backend.sh <<'EOF'
 #!/bin/bash
 set -euxo pipefail
 BUCKET="$1"
-OBJECT_KEY="$${2:-backend/pvi-careers-api.jar}"
+OBJECT_KEY="$${2:-backend/mouw-careers-api.jar}"
 EXPECTED_SHA256="$${3:-}"
 
-aws s3 cp "s3://$${BUCKET}/$${OBJECT_KEY}" /opt/pvi/pvi-careers-api.jar
-chown ec2-user:ec2-user /opt/pvi/pvi-careers-api.jar
+aws s3 cp "s3://$${BUCKET}/$${OBJECT_KEY}" /opt/mouw/mouw-careers-api.jar
+chown ec2-user:ec2-user /opt/mouw/mouw-careers-api.jar
 
 if [ -n "$${EXPECTED_SHA256}" ]; then
-  ACTUAL_SHA256=$(sha256sum /opt/pvi/pvi-careers-api.jar | awk '{print $1}')
+  ACTUAL_SHA256=$(sha256sum /opt/mouw/mouw-careers-api.jar | awk '{print $1}')
   if [ "$${ACTUAL_SHA256}" != "$${EXPECTED_SHA256}" ]; then
     echo "Checksum validation failed for backend artifact."
     exit 1
@@ -122,8 +123,8 @@ if [ -n "$${EXPECTED_SHA256}" ]; then
 fi
 
 systemctl daemon-reload
-systemctl enable pvi-careers-api
-systemctl restart pvi-careers-api
+systemctl enable mouw-careers-api
+systemctl restart mouw-careers-api
 EOF
 chmod +x /usr/local/bin/deploy-backend.sh
 
@@ -134,7 +135,7 @@ cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'EOF'
       "files": {
         "collect_list": [
           {
-            "file_path": "/var/log/pvi-backend.log",
+            "file_path": "/var/log/mouw-backend.log",
             "log_group_name": "${cloudwatch_log_group_backend}",
             "log_stream_name": "{instance_id}"
           },

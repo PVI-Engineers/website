@@ -1,6 +1,6 @@
 const openings = [
   {
-    id: 'PVI-RD-101',
+    id: 'MOUW-RD-101',
     role: 'Senior Road Design Engineer',
     type: 'Full-time',
     location: 'Bengaluru, India',
@@ -47,7 +47,7 @@ const openings = [
     ],
   },
   {
-    id: 'PVI-WW-204',
+    id: 'MOUW-WW-204',
     role: 'Water Systems Analyst',
     type: 'Full-time',
     location: 'Mumbai, India',
@@ -94,7 +94,7 @@ const openings = [
     ],
   },
   {
-    id: 'PVI-DR-309',
+    id: 'MOUW-DR-309',
     role: 'Drainage Design Engineer',
     type: 'Full-time',
     location: 'Houston, USA',
@@ -141,7 +141,7 @@ const openings = [
     ],
   },
   {
-    id: 'PVI-SG-415',
+    id: 'MOUW-SG-415',
     role: 'Survey & GIS Coordinator',
     type: 'Full-time',
     location: 'Dallas, USA',

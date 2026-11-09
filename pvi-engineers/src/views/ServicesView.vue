@@ -75,9 +75,9 @@ const sectors = [
       <p class="section-kicker">Services</p>
       <h1 class="page-title">Engineering Services Built for High-Impact Infrastructure</h1>
       <p class="page-copy">
-        PVI ENGINEERS delivers specialized civil engineering services in roads, water systems, and
-        drainage infrastructure. Our approach combines technical depth with digital modeling to
-        produce resilient, future-ready outcomes.
+        MOUW Engineering and Land Surveyors delivers civil engineering and land surveying services
+        for roads, water systems, and drainage infrastructure. Our approach combines technical depth
+        with digital modeling to produce resilient, future-ready outcomes.
       </p>
     </section>
 

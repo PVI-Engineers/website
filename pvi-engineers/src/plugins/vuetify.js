@@ -2,7 +2,7 @@ import '@mdi/font/css/materialdesignicons.css'
 import 'vuetify/styles'
 import { createVuetify } from 'vuetify'
 
-const pviLight = {
+const mouwLight = {
   dark: false,
   colors: {
     background: '#f3f9ff',
@@ -17,7 +17,7 @@ const pviLight = {
   },
 }
 
-const pviDark = {
+const mouwDark = {
   dark: true,
   colors: {
     background: '#050816',
@@ -34,10 +34,10 @@ const pviDark = {
 
 export default createVuetify({
   theme: {
-    defaultTheme: 'pviLight',
+    defaultTheme: 'mouwLight',
     themes: {
-      pviLight,
-      pviDark,
+      mouwLight,
+      mouwDark,
     },
   },
   defaults: {

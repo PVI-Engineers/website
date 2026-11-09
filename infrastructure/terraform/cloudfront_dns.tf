@@ -123,7 +123,7 @@ resource "aws_cloudfront_function" "spa_router" {
   EOF
 }
 
-resource "aws_cloudfront_distribution" "site" {
+resource "aws_cloudfront_distribution" "public" {
   enabled             = true
   is_ipv6_enabled     = true
   comment             = "${local.name_prefix} website distribution"
@@ -253,7 +253,7 @@ data "aws_iam_policy_document" "frontend_bucket_policy" {
     condition {
       test     = "StringEquals"
       variable = "AWS:SourceArn"
-      values   = [aws_cloudfront_distribution.site.arn]
+      values   = [aws_cloudfront_distribution.public.arn]
     }
   }
 }
@@ -270,8 +270,8 @@ resource "aws_route53_record" "root" {
   type    = "A"
 
   alias {
-    name                   = aws_cloudfront_distribution.site.domain_name
-    zone_id                = aws_cloudfront_distribution.site.hosted_zone_id
+    name                   = aws_cloudfront_distribution.public.domain_name
+    zone_id                = aws_cloudfront_distribution.public.hosted_zone_id
     evaluate_target_health = false
   }
 }
@@ -283,8 +283,8 @@ resource "aws_route53_record" "www" {
   type    = "A"
 
   alias {
-    name                   = aws_cloudfront_distribution.site.domain_name
-    zone_id                = aws_cloudfront_distribution.site.hosted_zone_id
+    name                   = aws_cloudfront_distribution.public.domain_name
+    zone_id                = aws_cloudfront_distribution.public.hosted_zone_id
     evaluate_target_health = false
   }
 }

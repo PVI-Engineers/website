@@ -156,12 +156,29 @@ jobs:
         run: |
           terraform -chdir=infrastructure/terraform plan -lock-timeout=300s \
             -var-file="${TF_VARS_FILE}" \
-            -var="bootstrap_admin_username=admin@pvi.local" \
+            -var="bootstrap_admin_username=admin@mouw.local" \
             -var="bootstrap_admin_password=Admin@123" \
-            -var="bootstrap_hr_username=hr@pvi.local" \
+            -var="bootstrap_admin_full_name=MOUW Admin" \
+            -var="bootstrap_admin_email=admin@mouwengineering.com" \
+            -var="bootstrap_hr_username=hr@mouw.local" \
             -var="bootstrap_hr_password=Hr@123" \
-            -var="bootstrap_employee_username=employee@pvi.local" \
+            -var="bootstrap_hr_full_name=MOUW HR" \
+            -var="bootstrap_hr_email=hr@mouwengineering.com" \
+            -var="bootstrap_employee_username=employee@mouw.local" \
             -var="bootstrap_employee_password=Employee@123" \
+            -var="bootstrap_employee_full_name=MOUW Employee" \
+            -var="bootstrap_employee_email=employee@mouwengineering.com" \
+            -var="mail_from_address=no-reply@mouwengineering.com" \
+            -var="company_mail_to=hr@mouwengineering.com" \
+            -var="contact_mail_to=contact@mouwengineering.com" \
+            -var="project_name=mouw" \
+            -var="frontend_bucket_name=mouw-engineers-prod-frontend" \
+            -var="resume_bucket_name=mouw-engineers-prod-resumes" \
+            -var="artifacts_bucket_name=mouw-engineers-prod-artifacts" \
+            -var="db_name=mouw_careers" \
+            -var="db_username=mouw_admin" \
+            -var="rds_deletion_protection=false" \
+            -var="rds_skip_final_snapshot=true" \
             -out=tfplan
 
       - name: Terraform Apply on Push

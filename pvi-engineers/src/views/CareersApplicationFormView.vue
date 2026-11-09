@@ -438,7 +438,7 @@ async function submitApplication() {
                 v-model="application.whyJoin"
                 :rules="[required]"
                 auto-grow
-                label="Why do you want to join PVI ENGINEERS? *"
+                label="Why do you want to join MOUW Engineering and Land Surveyors? *"
                 rows="3"
               />
             </v-col>
@@ -459,7 +459,7 @@ async function submitApplication() {
             v-model="application.consentPrivacy"
             :rules="[requiredTrue]"
             color="primary"
-            label="I agree to PVI ENGINEERS processing my application data. *"
+            label="I agree to MOUW Engineering and Land Surveyors processing my application data. *"
           />
           <v-checkbox
             v-model="application.consentBackground"

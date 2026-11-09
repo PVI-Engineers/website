@@ -3,8 +3,8 @@ const API_BASE_URL =
   configuredBaseUrl.length === 0 || configuredBaseUrl === '/'
     ? ''
     : configuredBaseUrl.replace(/\/$/, '')
-const TOKEN_KEY = 'pvi-portal-token'
-const USER_KEY = 'pvi-portal-user'
+const TOKEN_KEY = 'mouw-portal-token'
+const USER_KEY = 'mouw-portal-user'
 
 function extractErrorMessage(payload, fallback) {
   if (!payload) return fallback

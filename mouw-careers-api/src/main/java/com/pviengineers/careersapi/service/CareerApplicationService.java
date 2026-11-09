@@ -229,7 +229,7 @@ public class CareerApplicationService {
     private String generateApplicationRef() {
         String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String randomPart = UUID.randomUUID().toString().substring(0, 6).toUpperCase(Locale.ROOT);
-        return "PVI-APP-" + datePart + "-" + randomPart;
+        return "MOUW-APP-" + datePart + "-" + randomPart;
     }
 
     private boolean isMailConfigurationReady() {
@@ -404,7 +404,7 @@ public class CareerApplicationService {
             MimeMessageHelper helper = new MimeMessageHelper(message, false, StandardCharsets.UTF_8.name());
             helper.setFrom(senderAddress);
             helper.setTo(application.getEmail());
-            helper.setSubject("PVI ENGINEERS | Application Received | " + application.getJobRole());
+            helper.setSubject("MOUW Engineering and Land Surveyors | Application Received | " + application.getJobRole());
             helper.setText(buildApplicantMailBody(application), false);
             dispatchMimeMessage(message);
         } catch (Exception ex) {
@@ -546,7 +546,7 @@ public class CareerApplicationService {
         return """
                 Dear %s %s,
 
-                Thank you for applying to PVI ENGINEERS for the position of %s.
+                Thank you for applying to MOUW Engineering and Land Surveyors for the position of %s.
 
                 We have received your application successfully.
                 Application Reference: %s
@@ -555,7 +555,7 @@ public class CareerApplicationService {
 
                 Regards,
                 HR Team
-                PVI ENGINEERS
+                MOUW Engineering and Land Surveyors
                 """.formatted(
                 app.getFirstName(),
                 app.getLastName(),

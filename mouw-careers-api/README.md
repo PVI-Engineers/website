@@ -1,6 +1,6 @@
-# PVI Careers API
+# MOUW Careers API
 
-Spring Boot backend for PVI ENGINEERS careers applications.
+Spring Boot backend for MOUW Engineering and Land Surveyors careers applications.
 
 ## Features
 

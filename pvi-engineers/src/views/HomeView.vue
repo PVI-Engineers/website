@@ -7,15 +7,14 @@ import { homeHeroImage, homeWorkGallery } from '../data/siteMedia'
   <v-container class="page-shell">
     <v-row class="hero align-center" dense>
       <v-col cols="12" md="7">
-        <v-chip color="primary" variant="outlined" class="mb-5">Futuristic Civil Engineering Website</v-chip>
+        <v-chip color="primary" variant="outlined" class="mb-5">Engineering and Land Surveying</v-chip>
         <h1 class="page-title">
-          PVI ENGINEERS
+          MOUW Engineering and Land Surveyors
           <span class="gradient-text">Road, Water, Drainage, and Infrastructure Specialists</span>
         </h1>
         <p class="page-copy">
-          Explore every practice area and company section directly from the dropdown navigation.
-          Every main button and dropdown option now includes a dedicated page with rich visual
-          content.
+          MOUW Engineering and Land Surveyors provides civil engineering and land surveying for
+          roads, water systems, drainage, and infrastructure projects.
         </p>
         <div class="mt-7 d-flex ga-3 flex-wrap">
           <v-btn color="primary" size="large" to="/contact">Start a Project Discussion</v-btn>

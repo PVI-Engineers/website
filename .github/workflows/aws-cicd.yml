@@ -4,8 +4,8 @@ on:
   push:
     branches: [main]
     paths:
-      - "pvi-engineers/**"
-      - "pvi-careers-api/**"
+      - "mouw-engineers/**"
+      - "mouw-careers-api/**"
       - ".github/workflows/aws-cicd.yml"
   workflow_dispatch:
 
@@ -68,22 +68,22 @@ jobs:
           cache: maven
 
       - name: Install frontend deps
-        working-directory: pvi-engineers
+        working-directory: mouw-engineers
         run: npm ci
 
       - name: Audit frontend production dependencies
-        working-directory: pvi-engineers
+        working-directory: mouw-engineers
         continue-on-error: true
         run: npm audit --omit=dev --audit-level=critical
 
       - name: Build frontend
-        working-directory: pvi-engineers
+        working-directory: mouw-engineers
         run: npm run build
         env:
           VITE_API_BASE_URL: ""
 
       - name: Build backend
-        working-directory: pvi-careers-api
+        working-directory: mouw-careers-api
         run: mvn -B -DskipTests package
 
       - name: App deploy skipped
@@ -112,7 +112,7 @@ jobs:
 
       - name: Upload frontend to S3
         if: steps.secrets_check.outputs.ready == 'true'
-        run: aws s3 sync pvi-engineers/dist "s3://${FRONTEND_BUCKET}" --delete
+        run: aws s3 sync mouw-engineers/dist "s3://${FRONTEND_BUCKET}" --delete
 
       - name: Invalidate CloudFront cache
         if: steps.secrets_check.outputs.ready == 'true'
@@ -121,11 +121,11 @@ jobs:
       - name: Upload backend artifact to S3
         if: steps.secrets_check.outputs.ready == 'true'
         run: |
-          BACKEND_SHA256=$(sha256sum pvi-careers-api/target/pvi-careers-api-0.0.1-SNAPSHOT.jar | awk '{print $1}')
+          BACKEND_SHA256=$(sha256sum mouw-careers-api/target/mouw-careers-api-0.0.1-SNAPSHOT.jar | awk '{print $1}')
           echo "BACKEND_SHA256=$BACKEND_SHA256" >> "$GITHUB_ENV"
           aws s3 cp \
-            pvi-careers-api/target/pvi-careers-api-0.0.1-SNAPSHOT.jar \
-            "s3://${ARTIFACT_BUCKET}/backend/pvi-careers-api.jar"
+            mouw-careers-api/target/mouw-careers-api-0.0.1-SNAPSHOT.jar \
+            "s3://${ARTIFACT_BUCKET}/backend/mouw-careers-api.jar"
 
       - name: Deploy backend to EC2 using SSM
         if: steps.secrets_check.outputs.ready == 'true'
@@ -136,20 +136,25 @@ jobs:
           {
             "commands": [
               "set -euo pipefail",
-              "aws s3 cp s3://${ARTIFACT_BUCKET}/backend/pvi-careers-api.jar /opt/pvi/pvi-careers-api.jar",
-              "echo ${BACKEND_SHA256}  /opt/pvi/pvi-careers-api.jar | sha256sum -c -",
-              "sudo chown ec2-user:ec2-user /opt/pvi/pvi-careers-api.jar",
+              "sudo mkdir -p /opt/mouw",
+              "sudo touch /var/log/mouw-backend.log",
+              "sudo chown ec2-user:ec2-user /var/log/mouw-backend.log",
+              "aws s3 cp s3://${ARTIFACT_BUCKET}/backend/mouw-careers-api.jar /opt/mouw/mouw-careers-api.jar",
+              "echo ${BACKEND_SHA256}  /opt/mouw/mouw-careers-api.jar | sha256sum -c -",
+              "sudo chown ec2-user:ec2-user /opt/mouw/mouw-careers-api.jar",
+              "sudo bash -c 'cat >/etc/systemd/system/mouw-careers-api.service <<\"EOF\"\n[Unit]\nDescription=MOUW Careers Spring Boot API\nAfter=network.target\nConditionPathExists=/opt/mouw/mouw-careers-api.jar\n\n[Service]\nUser=ec2-user\nGroup=ec2-user\nWorkingDirectory=/opt/mouw\nEnvironmentFile=/opt/mouw/application.env\nEnvironment=JAVA_OPTS=-Xms128m -Xmx512m\nExecStart=/usr/bin/java -Xms128m -Xmx512m -jar /opt/mouw/mouw-careers-api.jar\nStandardOutput=append:/var/log/mouw-backend.log\nStandardError=append:/var/log/mouw-backend.log\nRestart=always\nRestartSec=5\n\n[Install]\nWantedBy=multi-user.target\nEOF'",
               "sudo systemctl daemon-reload",
-              "sudo systemctl enable pvi-careers-api",
-              "sudo systemctl restart pvi-careers-api",
+              "shopt -s nullglob; for unit_path in /etc/systemd/system/*careers-api.service; do unit_name=\$(basename \"\$unit_path\"); if [ \"\$unit_name\" != \"mouw-careers-api.service\" ]; then sudo systemctl disable --now \"\${unit_name%.service}\" || true; sudo rm -f \"\$unit_path\"; fi; done",
+              "sudo systemctl enable mouw-careers-api",
+              "sudo systemctl restart mouw-careers-api",
               "if ! command -v curl >/dev/null 2>&1; then if command -v dnf >/dev/null 2>&1; then sudo dnf install -y curl; else sudo yum install -y curl; fi; fi",
               "if ! systemctl list-unit-files | grep -q '^nginx.service'; then if command -v dnf >/dev/null 2>&1; then sudo dnf install -y nginx; elif command -v amazon-linux-extras >/dev/null 2>&1; then sudo amazon-linux-extras install -y nginx1; else sudo yum install -y nginx; fi; fi",
-              "sudo rm -f /etc/nginx/conf.d/default.conf",
-              "sudo bash -c 'cat >/etc/nginx/conf.d/pvi-api.conf <<\"EOF\"\nserver {\n    listen 80 default_server;\n    server_name _;\n    server_tokens off;\n    client_max_body_size 10m;\n\n    location /api/ {\n        proxy_pass http://127.0.0.1:8080/api/;\n        proxy_http_version 1.1;\n    }\n\n    location / {\n        return 404;\n    }\n}\nEOF'",
+              "sudo find /etc/nginx/conf.d -maxdepth 1 -type f -name '*.conf' ! -name 'mouw-api.conf' -delete",
+              "sudo bash -c 'cat >/etc/nginx/conf.d/mouw-api.conf <<\"EOF\"\nserver {\n    listen 80 default_server;\n    server_name _;\n    server_tokens off;\n    client_max_body_size 10m;\n\n    location /api/ {\n        proxy_pass http://127.0.0.1:8080/api/;\n        proxy_http_version 1.1;\n    }\n\n    location / {\n        return 404;\n    }\n}\nEOF'",
               "sudo nginx -t",
               "sudo systemctl enable nginx",
               "sudo systemctl restart nginx",
-              "if ! timeout 180 bash -c 'until curl -fsS http://127.0.0.1:8080/api/health >/dev/null 2>&1; do sleep 3; done'; then sudo systemctl status pvi-careers-api --no-pager || true; sudo journalctl -u pvi-careers-api -n 200 --no-pager || true; exit 1; fi",
+              "if ! timeout 180 bash -c 'until curl -fsS http://127.0.0.1:8080/api/health >/dev/null 2>&1; do sleep 3; done'; then sudo systemctl status mouw-careers-api --no-pager || true; sudo journalctl -u mouw-careers-api -n 200 --no-pager || true; exit 1; fi",
               "if ! timeout 120 bash -c 'until curl -fsS http://127.0.0.1/api/health >/dev/null 2>&1; do sleep 2; done'; then sudo systemctl status nginx --no-pager || true; sudo journalctl -u nginx -n 200 --no-pager || true; exit 1; fi",
               "curl -fsS http://127.0.0.1:8080/api/health",
               "curl -fsS http://127.0.0.1/api/health",
@@ -157,7 +162,7 @@ jobs:
               "PRESIGN_STATUS=\$(curl -sS -o /tmp/presign-smoke.json -w \"%{http_code}\" -H \"Content-Type: application/json\" -d '{\"files\":[{\"clientFileId\":\"smoke-1\",\"category\":\"resume\",\"fileName\":\"smoke.pdf\",\"contentType\":\"application/pdf\",\"sizeBytes\":1024}]}' http://127.0.0.1/api/careers/applications/presign || true)",
               "echo \"Presign smoke status: \$PRESIGN_STATUS\"",
               "cat /tmp/presign-smoke.json || true",
-              "if [ \"\$PRESIGN_STATUS\" != \"200\" ]; then sudo systemctl status pvi-careers-api --no-pager || true; sudo journalctl -u pvi-careers-api -n 200 --no-pager || true; sudo tail -n 200 /var/log/pvi-backend.log || true; exit 1; fi"
+              "if [ \"\$PRESIGN_STATUS\" != \"200\" ]; then sudo systemctl status mouw-careers-api --no-pager || true; sudo journalctl -u mouw-careers-api -n 200 --no-pager || true; sudo tail -n 200 /var/log/mouw-backend.log || true; exit 1; fi"
             ]
           }
           EOF
