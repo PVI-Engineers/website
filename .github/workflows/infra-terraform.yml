@@ -181,6 +181,63 @@ jobs:
             -var="rds_skip_final_snapshot=true" \
             -out=tfplan
 
+      - name: Allow replacement of the old database and buckets
+        if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE != 'destroy'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          empty_bucket() {
+            local bucket="$1"
+            if [ -z "$bucket" ] || [ "$bucket" = "null" ]; then
+              return 0
+            fi
+            if ! aws s3api head-bucket --bucket "$bucket" >/dev/null 2>&1; then
+              echo "Bucket ${bucket} is already gone"
+              return 0
+            fi
+
+            echo "Removing all object versions from s3://${bucket}"
+            while true; do
+              response="$(aws s3api list-object-versions --bucket "$bucket" --output json 2>/dev/null || echo '{}')"
+              object_count="$(echo "$response" | jq '((.Versions // []) + (.DeleteMarkers // [])) | length')"
+              if [ "$object_count" -eq 0 ]; then
+                break
+              fi
+              payload="$(echo "$response" | jq -c '{Objects: ((.Versions // []) + (.DeleteMarkers // [])) | map({Key: .Key, VersionId: .VersionId})}')"
+              aws s3api delete-objects --bucket "$bucket" --delete "$payload"
+            done
+          }
+
+          for bucket in \
+            pvi-engineers-prod-frontend \
+            pvi-engineers-prod-resumes \
+            pvi-engineers-prod-artifacts
+          do
+            empty_bucket "$bucket"
+          done
+
+          for address in aws_s3_bucket.frontend aws_s3_bucket.resumes aws_s3_bucket.artifacts; do
+            bucket="$(terraform -chdir=infrastructure/terraform state show -no-color "$address" 2>/dev/null | awk -F'"' '/^ *bucket / { print $2; exit }')"
+            empty_bucket "$bucket"
+          done
+
+          identifier="$(terraform -chdir=infrastructure/terraform state show -no-color aws_db_instance.postgres 2>/dev/null | awk -F'"' '/^ *identifier / { print $2; exit }')"
+          if [ -z "$identifier" ]; then
+            identifier="pvi-prod-postgres"
+          fi
+
+          if aws rds describe-db-instances --db-instance-identifier "$identifier" >/dev/null 2>&1; then
+            echo "Turning off deletion protection for ${identifier}"
+            aws rds modify-db-instance \
+              --db-instance-identifier "$identifier" \
+              --no-deletion-protection \
+              --apply-immediately >/dev/null
+            aws rds wait db-instance-available --db-instance-identifier "$identifier"
+          else
+            echo "Database ${identifier} is already gone"
+          fi
+
       - name: Terraform Apply on Push
         if: steps.secrets_check.outputs.ready == 'true' && github.event_name == 'push'
         run: terraform -chdir=infrastructure/terraform apply -lock-timeout=300s -auto-approve tfplan
