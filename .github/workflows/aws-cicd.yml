@@ -162,19 +162,6 @@ jobs:
           }
           EOF
 
-          aws ec2 wait instance-running --instance-ids "$EC2_INSTANCE_ID"
-          for attempt in $(seq 1 36); do
-            PING="$(aws ssm describe-instance-information --filters "Key=InstanceIds,Values=$EC2_INSTANCE_ID" --query "InstanceInformationList[0].PingStatus" --output text 2>/dev/null || true)"
-            if [ "$PING" = "Online" ]; then
-              break
-            fi
-            if [ "$attempt" -eq 36 ]; then
-              echo "SSM agent did not come online for $EC2_INSTANCE_ID" >&2
-              exit 1
-            fi
-            sleep 10
-          done
-
           COMMAND_ID=$(aws ssm send-command \
             --document-name "AWS-RunShellScript" \
             --instance-ids "$EC2_INSTANCE_ID" \
