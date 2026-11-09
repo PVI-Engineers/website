@@ -1,13 +1,14 @@
 resource "aws_route53_zone" "primary" {
-  count = local.use_existing_zone ? 0 : 1
+  count = var.use_custom_domain && !local.use_existing_zone ? 1 : 0
   name  = var.domain_name
 }
 
 locals {
-  route53_zone_id = local.use_existing_zone ? var.hosted_zone_id : aws_route53_zone.primary[0].zone_id
+  route53_zone_id = local.use_existing_zone ? var.hosted_zone_id : try(aws_route53_zone.primary[0].zone_id, "")
 }
 
 resource "aws_acm_certificate" "site" {
+  count                     = var.use_custom_domain ? 1 : 0
   provider                  = aws.use1
   domain_name               = var.domain_name
   subject_alternative_names = var.create_www_record ? ["www.${var.domain_name}"] : []
@@ -20,7 +21,9 @@ resource "aws_acm_certificate" "site" {
 
 resource "aws_route53_record" "acm_validation" {
   for_each = {
-    for option in aws_acm_certificate.site.domain_validation_options : option.domain_name => {
+    for option in flatten([
+      for cert in aws_acm_certificate.site : cert.domain_validation_options
+      ]) : option.domain_name => {
       name   = option.resource_record_name
       record = option.resource_record_value
       type   = option.resource_record_type
@@ -36,8 +39,9 @@ resource "aws_route53_record" "acm_validation" {
 }
 
 resource "aws_acm_certificate_validation" "site" {
+  count                   = var.use_custom_domain ? 1 : 0
   provider                = aws.use1
-  certificate_arn         = aws_acm_certificate.site.arn
+  certificate_arn         = aws_acm_certificate.site[0].arn
   validation_record_fqdns = [for record in aws_route53_record.acm_validation : record.fqdn]
 }
 
@@ -102,7 +106,7 @@ resource "aws_cloudfront_distribution" "site" {
   }
 
   origin {
-    domain_name = local.api_fqdn
+    domain_name = local.api_origin_domain
     origin_id   = "backend-api"
 
     custom_origin_config {
@@ -174,9 +178,10 @@ resource "aws_cloudfront_distribution" "site" {
   }
 
   viewer_certificate {
-    acm_certificate_arn      = aws_acm_certificate_validation.site.certificate_arn
-    ssl_support_method       = "sni-only"
-    minimum_protocol_version = "TLSv1.2_2021"
+    cloudfront_default_certificate = length(aws_acm_certificate_validation.site) == 0
+    acm_certificate_arn            = one(aws_acm_certificate_validation.site[*].certificate_arn)
+    ssl_support_method             = length(aws_acm_certificate_validation.site) == 0 ? null : "sni-only"
+    minimum_protocol_version       = length(aws_acm_certificate_validation.site) == 0 ? null : "TLSv1.2_2021"
   }
 
   depends_on = [
@@ -234,6 +239,7 @@ resource "aws_s3_bucket_policy" "frontend" {
 }
 
 resource "aws_route53_record" "root" {
+  count   = var.use_custom_domain ? 1 : 0
   zone_id = local.route53_zone_id
   name    = var.domain_name
   type    = "A"
@@ -246,7 +252,7 @@ resource "aws_route53_record" "root" {
 }
 
 resource "aws_route53_record" "www" {
-  count   = var.create_www_record ? 1 : 0
+  count   = var.use_custom_domain && var.create_www_record ? 1 : 0
   zone_id = local.route53_zone_id
   name    = "www.${var.domain_name}"
   type    = "A"
@@ -259,6 +265,7 @@ resource "aws_route53_record" "www" {
 }
 
 resource "aws_route53_record" "api" {
+  count   = var.use_custom_domain ? 1 : 0
   zone_id = local.route53_zone_id
   name    = local.api_fqdn
   type    = "A"

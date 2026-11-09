@@ -113,7 +113,10 @@ resource "aws_s3_bucket_cors_configuration" "resumes" {
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["PUT", "GET", "HEAD"]
-    allowed_origins = local.frontend_urls
+    allowed_origins = distinct(concat(
+      local.frontend_urls,
+      ["https://${aws_cloudfront_distribution.site.domain_name}"]
+    ))
     expose_headers  = ["ETag"]
     max_age_seconds = 3000
   }

@@ -16,18 +16,32 @@ variable "environment" {
   default     = "prod"
 }
 
+variable "use_custom_domain" {
+  description = "Attach a custom domain with Route53 and ACM. Leave false to serve the site on the CloudFront distribution domain (*.cloudfront.net)."
+  type        = bool
+  default     = false
+}
+
 variable "domain_name" {
-  description = "Primary public apex DNS domain without www (example: pviengineers.com)."
+  description = "Apex DNS domain without www. Used only when use_custom_domain is true."
   type        = string
+  default     = ""
 
   validation {
-    condition     = !startswith(lower(var.domain_name), "www.")
-    error_message = "domain_name must be the apex domain without 'www.' (example: pviengineers.com)."
+    condition     = var.domain_name == "" || !startswith(lower(var.domain_name), "www.")
+    error_message = "domain_name must be empty, or an apex domain without 'www.'."
+  }
+}
+
+check "custom_domain_requires_name" {
+  assert {
+    condition     = !var.use_custom_domain || length(trimspace(var.domain_name)) > 0
+    error_message = "When use_custom_domain is true, set domain_name to the apex domain without 'www.'."
   }
 }
 
 variable "hosted_zone_id" {
-  description = "Existing Route53 Hosted Zone ID. Leave empty to create a new hosted zone."
+  description = "Existing Route53 Hosted Zone ID. Used only when use_custom_domain is true. Leave empty to create a new hosted zone."
   type        = string
   default     = ""
 }

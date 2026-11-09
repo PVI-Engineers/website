@@ -5,9 +5,8 @@ This guide matches your requested stack:
 - EC2 (`t2.micro`) for backend runtime
 - RDS PostgreSQL
 - S3 (frontend hosting + resumes + build artifacts)
-- CloudFront
-- Route53 DNS
-- ACM free SSL certificate
+- CloudFront (default public URL is the distribution domain)
+- Route53 DNS and ACM certificate only when `use_custom_domain` is true
 - SES for email
 - CloudWatch logging/alarms
 - CI/CD via GitHub Actions
@@ -24,6 +23,7 @@ This guide matches your requested stack:
 Update these placeholders with your real values:
 
 - `infrastructure/terraform/terraform.tfvars.pvi-draft.example`
+  - leave `use_custom_domain = false` until a new domain is ready
   - `REPLACE_GITHUB_ORG/REPLACE_REPO`
   - `REPLACE_EC2_KEYPAIR_NAME`
   - `REPLACE_YOUR_PUBLIC_IP/32`
@@ -37,7 +37,7 @@ Update these placeholders with your real values:
 - `AWS_DEPLOYMENT.md` command placeholders (when running fallback manual deploy):
   - `<ARTIFACT_BUCKET>`
   - `<EC2_INSTANCE_ID>`
-  - `<your-domain>`
+  - CloudFront domain from output `frontend_url`
 
 - GitHub Secrets (required):
   - `AWS_ROLE_TO_ASSUME_INFRA`
@@ -118,8 +118,8 @@ terraform apply
 
 Fill `terraform.tfvars` carefully:
 
-- domain + bucket names
-  - set `domain_name` to apex only (for your case: `pviengineers.com`, not `www.pviengineers.com`)
+- bucket names, and leave `use_custom_domain = false` so the site uses the CloudFront domain
+  - when attaching a domain later, set `use_custom_domain = true` and `domain_name` to the apex only (no `www.`)
 - DB password
   - must be 8-128 printable ASCII chars and cannot include `/`, `@`, `"`, or spaces (AWS RDS restriction)
 - JWT secret
@@ -140,19 +140,16 @@ aws ssm send-command \
 
 ## 7) DNS + SSL Notes
 
-- If Terraform creates a new hosted zone, update your registrar name servers with output `route53_name_servers`.
-- ACM certificate is auto-created in `us-east-1` for CloudFront.
-- CloudFront aliases are configured for root domain (+ `www` when enabled).
+- Default (`use_custom_domain = false`): no Route53 zone and no ACM certificate. CloudFront serves HTTPS on its own domain. Use output `frontend_url`.
+- Custom domain (`use_custom_domain = true`): if Terraform creates a hosted zone, update the registrar name servers with output `route53_name_servers`. ACM is created in `us-east-1`, and CloudFront aliases cover the apex (and `www` when enabled).
 
 ## 8) SES Setup
 
-Terraform creates:
+SES domain identity and DKIM records are created only when `use_custom_domain = true`.
 
-- SES domain identity
-- SES DKIM records in Route53
-
-After DNS propagates, SES should verify domain automatically.
-Make sure `mail_from_address` belongs to verified domain.
+After DNS propagates, SES should verify that domain automatically.
+Make sure `mail_from_address` belongs to the verified domain.
+Until a domain is attached, mail sending stays unverified.
 
 ## 9) CI/CD Setup (GitHub)
 
@@ -193,9 +190,9 @@ Nginx receives `/api/*` and proxies to Spring Boot on port `8080`.
 
 ## 11) Post Deployment Validation
 
-1. Open `https://<your-domain>`
+1. Open the `frontend_url` output (`https://xxxx.cloudfront.net` while `use_custom_domain` is false)
 2. Check API:
-   - `https://<your-domain>/api/health`
+   - `https://xxxx.cloudfront.net/api/health`
 3. Submit careers application form with resume + optional supporting files
 4. Validate:
    - row inserted in RDS

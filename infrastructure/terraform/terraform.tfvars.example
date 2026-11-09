@@ -4,10 +4,13 @@ environment = "prod"
 github_repository = "PVI-Engineers/website"
 github_branch = "main"
 
-# Use apex domain only (no www prefix).
-domain_name = "pviengineers.com"
-hosted_zone_id = ""
-api_subdomain = "api"
+# Site is served on the CloudFront domain (xxxx.cloudfront.net).
+# Set use_custom_domain = true and fill domain_name when you are ready to attach a domain.
+use_custom_domain = false
+# domain_name = "example.com"
+# hosted_zone_id = ""
+# api_subdomain = "api"
+# create_www_record = true
 
 frontend_bucket_name = "pvi-prod-frontend"
 resume_bucket_name = "pvi-prod-resumes"

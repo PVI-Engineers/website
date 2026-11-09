@@ -6,17 +6,17 @@ This Terraform stack provisions the complete production-grade AWS setup requeste
 - RDS PostgreSQL (private subnets)
 - S3 (frontend hosting origin, resume storage, CI artifacts)
 - CloudFront (frontend delivery + `/api/*` proxy to EC2 origin)
-- Route53 DNS
-- ACM free SSL certificate (CloudFront, issued in `us-east-1`)
-- SES domain identity + DKIM records
+- Optional Route53 DNS and ACM certificate when `use_custom_domain` is true
+- Optional SES domain identity + DKIM records when `use_custom_domain` is true
 - CloudWatch logs + alarms
 - IAM roles/policies for runtime and deployment
 
 ## Architecture
 
-- User traffic hits `https://<domain>` via CloudFront.
+- By default the public URL is the CloudFront distribution domain (`https://xxxx.cloudfront.net`), using CloudFront's default certificate. Route53 and ACM are not created.
+- Set `use_custom_domain = true` later to attach an apex domain, `www`, Route53, and an ACM certificate.
 - CloudFront serves static Vue files from S3.
-- CloudFront forwards `/api/*` calls to EC2 (`api.<domain>` origin).
+- CloudFront forwards `/api/*` calls to the EC2 public DNS name. With a custom domain, that origin is `api.<domain>` instead.
 - Spring Boot on EC2 connects to RDS and issues pre-signed S3 upload URLs.
 - Browser uploads resume/supporting files directly to S3 using pre-signed URLs.
 - Spring Boot sends emails via AWS SES API.
@@ -26,14 +26,15 @@ This Terraform stack provisions the complete production-grade AWS setup requeste
 
 - Terraform 1.6+
 - AWS CLI authenticated with account permissions
-- A registered domain name
+- A registered domain name is required only when `use_custom_domain` is true
 
 ## Usage
 
 1. Copy `terraform.tfvars.example` to `terraform.tfvars`
    - or start from `terraform.tfvars.pvi-draft.example` (pre-filled for this project naming)
-2. Fill real values (`domain_name`, bucket names, DB password, JWT secret, etc.)
-   - `domain_name` must be apex without `www` (example: `pviengineers.com`)
+2. Fill real values (bucket names, DB password, JWT secret, etc.)
+   - Leave `use_custom_domain = false` to use the CloudFront domain. Open the `frontend_url` output after apply.
+   - When you have a domain, set `use_custom_domain = true` and `domain_name` to the apex without `www`
    - `db_password` must be 8-128 printable ASCII chars and cannot include `/`, `@`, `"`, or spaces (AWS RDS rule)
    - Add any extra frontend origins (for staging/local) in `extra_frontend_urls` so S3 upload CORS allows them
    - Keep `enable_ssh_ingress=false` unless you need temporary SSH access
@@ -50,10 +51,11 @@ terraform plan
 terraform apply
 ```
 
-4. If `hosted_zone_id` is empty, Terraform creates a new hosted zone.  
-   Update your registrar name servers to the `route53_name_servers` output.
+4. With `use_custom_domain = false`, skip DNS. The site URL is output `frontend_url` (the CloudFront domain).
+   With `use_custom_domain = true` and an empty `hosted_zone_id`, Terraform creates a hosted zone.
+   Point the registrar at output `route53_name_servers`, then wait for ACM and SES DNS verification.
 
-5. Wait for ACM and SES DNS verification to complete.
+5. SES domain verification is created only when `use_custom_domain` is true. Until then, application and contact emails are not sent through a verified domain.
 
 ## Cloud-Only Terraform (No Local Run)
 
@@ -89,7 +91,7 @@ The workflow bootstraps Terraform state resources, then runs init/plan/apply in 
 
 - EC2 uses `t2.micro` as requested.
 - RDS uses `db.t3.micro` (smallest practical Postgres class).
-- CloudFront, S3, and Route53 are usage-based.
+- CloudFront and S3 are usage-based. Route53 is created only when `use_custom_domain` is true.
 
 ## Security Notes
 

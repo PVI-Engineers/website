@@ -11,7 +11,13 @@ output "ec2_public_ip" {
 }
 
 output "api_fqdn" {
-  value = local.api_fqdn
+  value       = local.api_fqdn
+  description = "Custom API hostname. Empty when the site is served only on the CloudFront domain."
+}
+
+output "api_origin_domain" {
+  value       = local.api_origin_domain
+  description = "Hostname CloudFront uses to reach the backend."
 }
 
 output "cloudfront_distribution_id" {
@@ -23,7 +29,8 @@ output "cloudfront_domain_name" {
 }
 
 output "frontend_url" {
-  value = "https://${var.domain_name}"
+  value       = var.use_custom_domain ? "https://${var.domain_name}" : "https://${aws_cloudfront_distribution.site.domain_name}"
+  description = "Public site URL. CloudFront distribution domain unless use_custom_domain is true."
 }
 
 output "frontend_bucket_name" {
@@ -43,12 +50,12 @@ output "rds_endpoint" {
 }
 
 output "route53_zone_id" {
-  value = local.route53_zone_id
+  value = var.use_custom_domain ? local.route53_zone_id : ""
 }
 
 output "route53_name_servers" {
-  value       = local.use_existing_zone ? [] : aws_route53_zone.primary[0].name_servers
-  description = "If a new hosted zone was created, point your registrar to these name servers."
+  value       = try(aws_route53_zone.primary[0].name_servers, [])
+  description = "Name servers for a Terraform-created hosted zone. Empty when use_custom_domain is false."
 }
 
 output "github_actions_role_arn" {
