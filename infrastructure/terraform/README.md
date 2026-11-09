@@ -24,7 +24,7 @@ This Terraform stack provisions the complete production-grade AWS setup requeste
 
 ## Prerequisites
 
-- Terraform 1.6+
+- Terraform 1.7+
 - AWS CLI authenticated with account permissions
 - A registered domain name is required only when `use_custom_domain` is true
 
@@ -52,6 +52,7 @@ terraform apply
 ```
 
 4. With `use_custom_domain = false`, skip DNS. The site URL is output `frontend_url` (the CloudFront domain).
+   An existing hosted zone is left in Route 53 and is not deleted.
    With `use_custom_domain = true` and an empty `hosted_zone_id`, Terraform creates a hosted zone.
    Point the registrar at output `route53_name_servers`, then wait for ACM and SES DNS verification.
 

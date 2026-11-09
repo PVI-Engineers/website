@@ -1,10 +1,19 @@
-resource "aws_route53_zone" "primary" {
+# The hosted zone already in AWS stays there. Terraform stops managing it and does not delete it.
+removed {
+  from = aws_route53_zone.primary
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+resource "aws_route53_zone" "custom" {
   count = var.use_custom_domain && !local.use_existing_zone ? 1 : 0
   name  = var.domain_name
 }
 
 locals {
-  route53_zone_id = local.use_existing_zone ? var.hosted_zone_id : try(aws_route53_zone.primary[0].zone_id, "")
+  route53_zone_id = local.use_existing_zone ? var.hosted_zone_id : try(aws_route53_zone.custom[0].zone_id, "")
 }
 
 resource "aws_acm_certificate" "site" {

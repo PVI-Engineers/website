@@ -54,8 +54,8 @@ output "route53_zone_id" {
 }
 
 output "route53_name_servers" {
-  value       = try(aws_route53_zone.primary[0].name_servers, [])
-  description = "Name servers for a Terraform-created hosted zone. Empty when use_custom_domain is false."
+  value       = try(aws_route53_zone.custom[0].name_servers, [])
+  description = "Name servers for a hosted zone created while use_custom_domain is true. Empty when the CloudFront domain is used. The previous hosted zone is left in AWS."
 }
 
 output "github_actions_role_arn" {
