@@ -104,7 +104,7 @@ jobs:
         if: steps.secrets_check.outputs.ready == 'true'
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.9.8"
+          terraform_version: "1.17.1"
 
       - name: Bootstrap Terraform state resources
         if: steps.secrets_check.outputs.ready == 'true'
