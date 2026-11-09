@@ -256,25 +256,44 @@ jobs:
         if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE == 'apply'
         run: terraform -chdir=infrastructure/terraform apply -lock-timeout=300s -auto-approve tfplan
 
-      - name: Disable RDS deletion protection before destroy
+      - name: Delete the database before destroy
         if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE == 'destroy'
         shell: bash
         run: |
           set -euo pipefail
-          identifier="$(terraform -chdir=infrastructure/terraform state show -no-color aws_db_instance.postgres 2>/dev/null | awk -F'"' '/^ *identifier / { print $2; exit }' || true)"
-          if [ -z "$identifier" ]; then
-            identifier="pvi-prod-postgres"
-          fi
-          if aws rds describe-db-instances --db-instance-identifier "$identifier" >/dev/null 2>&1; then
+
+          delete_db() {
+            local identifier="$1"
+            if ! aws rds describe-db-instances --db-instance-identifier "$identifier" >/dev/null 2>&1; then
+              echo "Database ${identifier} is already gone"
+              return 0
+            fi
+
+            local status
+            status="$(aws rds describe-db-instances --db-instance-identifier "$identifier" --query "DBInstances[0].DBInstanceStatus" --output text)"
+            if [ "$status" = "deleting" ]; then
+              echo "Waiting for ${identifier} to finish deleting"
+              aws rds wait db-instance-deleted --db-instance-identifier "$identifier"
+              return 0
+            fi
+
             echo "Turning off deletion protection for ${identifier}"
             aws rds modify-db-instance \
               --db-instance-identifier "$identifier" \
               --no-deletion-protection \
               --apply-immediately >/dev/null
             aws rds wait db-instance-available --db-instance-identifier "$identifier"
-          else
-            echo "Database ${identifier} is already gone"
-          fi
+
+            echo "Deleting database ${identifier}"
+            aws rds delete-db-instance \
+              --db-instance-identifier "$identifier" \
+              --skip-final-snapshot \
+              --delete-automated-backups >/dev/null
+            aws rds wait db-instance-deleted --db-instance-identifier "$identifier"
+          }
+
+          delete_db "pvi-prod-postgres"
+          delete_db "mouw-prod-postgres"
 
       - name: Empty application S3 buckets before destroy
         if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE == 'destroy'
