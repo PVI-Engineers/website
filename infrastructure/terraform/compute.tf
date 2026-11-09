@@ -65,6 +65,10 @@ resource "aws_instance" "backend" {
     aws_cloudwatch_log_group.backend,
     aws_cloudwatch_log_group.nginx
   ]
+
+  lifecycle {
+    ignore_changes = [user_data]
+  }
 }
 
 resource "aws_eip" "backend" {
@@ -87,6 +91,19 @@ resource "terraform_data" "sync_bootstrap_passwords" {
     interpreter = ["bash", "-c"]
     command = <<-EOT
       set -euo pipefail
+      INSTANCE_ID="${aws_instance.backend.id}"
+      aws ec2 wait instance-running --instance-ids "$INSTANCE_ID"
+      for attempt in $(seq 1 36); do
+        PING="$(aws ssm describe-instance-information --filters "Key=InstanceIds,Values=$INSTANCE_ID" --query "InstanceInformationList[0].PingStatus" --output text 2>/dev/null || true)"
+        if [ "$PING" = "Online" ]; then
+          break
+        fi
+        if [ "$attempt" -eq 36 ]; then
+          echo "SSM agent did not come online for $INSTANCE_ID" >&2
+          exit 1
+        fi
+        sleep 10
+      done
       PARAMS="$(mktemp)"
       cat > "$PARAMS" <<'EOF'
       ${jsonencode({
