@@ -249,12 +249,23 @@ jobs:
 
       - name: Disable RDS deletion protection before destroy
         if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE == 'destroy'
+        shell: bash
         run: |
-          terraform -chdir=infrastructure/terraform apply -lock-timeout=300s -auto-approve \
-            -var-file="${TF_VARS_FILE}" \
-            -var="rds_deletion_protection=false" \
-            -var="rds_skip_final_snapshot=true" \
-            -target=aws_db_instance.postgres
+          set -euo pipefail
+          identifier="$(terraform -chdir=infrastructure/terraform state show -no-color aws_db_instance.postgres 2>/dev/null | awk -F'"' '/^ *identifier / { print $2; exit }' || true)"
+          if [ -z "$identifier" ]; then
+            identifier="pvi-prod-postgres"
+          fi
+          if aws rds describe-db-instances --db-instance-identifier "$identifier" >/dev/null 2>&1; then
+            echo "Turning off deletion protection for ${identifier}"
+            aws rds modify-db-instance \
+              --db-instance-identifier "$identifier" \
+              --no-deletion-protection \
+              --apply-immediately >/dev/null
+            aws rds wait db-instance-available --db-instance-identifier "$identifier"
+          else
+            echo "Database ${identifier} is already gone"
+          fi
 
       - name: Empty application S3 buckets before destroy
         if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE == 'destroy'
@@ -267,24 +278,37 @@ jobs:
             if [ -z "$bucket" ] || [ "$bucket" = "null" ]; then
               return 0
             fi
+            if ! aws s3api head-bucket --bucket "$bucket" >/dev/null 2>&1; then
+              echo "Bucket ${bucket} is already gone"
+              return 0
+            fi
 
-            echo "Emptying s3://${bucket}"
+            echo "Removing all object versions from s3://${bucket}"
             aws s3 rm "s3://${bucket}" --recursive || true
-
             while true; do
               response="$(aws s3api list-object-versions --bucket "$bucket" --output json 2>/dev/null || echo '{}')"
-              object_count="$(echo "$response" | jq '((.Versions // []) + (.DeleteMarkers // [])) | length')"
-              if [ "$object_count" -eq 0 ]; then
+              object_count="$(echo "$response" | jq '((.Versions // []) + (.DeleteMarkers // [])) | length' || echo 0)"
+              if [ "${object_count:-0}" -eq 0 ]; then
                 break
               fi
-
               payload="$(echo "$response" | jq -c '{Objects: ((.Versions // []) + (.DeleteMarkers // [])) | map({Key: .Key, VersionId: .VersionId})}')"
-              aws s3api delete-objects --bucket "$bucket" --delete "$payload" || true
+              aws s3api delete-objects --bucket "$bucket" --delete "$payload"
             done
           }
 
-          for output_name in frontend_bucket_name resume_bucket_name artifacts_bucket_name; do
-            bucket="$(terraform -chdir=infrastructure/terraform output -raw "$output_name" 2>/dev/null || true)"
+          for bucket in \
+            pvi-engineers-prod-frontend \
+            pvi-engineers-prod-resumes \
+            pvi-engineers-prod-artifacts \
+            mouw-engineers-prod-frontend \
+            mouw-engineers-prod-resumes \
+            mouw-engineers-prod-artifacts
+          do
+            empty_bucket "$bucket"
+          done
+
+          for address in aws_s3_bucket.frontend aws_s3_bucket.resumes aws_s3_bucket.artifacts; do
+            bucket="$(terraform -chdir=infrastructure/terraform state show -no-color "$address" 2>/dev/null | awk -F'"' '/^ *bucket / { print $2; exit }' || true)"
             empty_bucket "$bucket"
           done
 
