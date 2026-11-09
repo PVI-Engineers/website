@@ -252,6 +252,111 @@ jobs:
             echo "Database ${identifier} is already gone"
           fi
 
+      - name: Remove leftover named resources before apply
+        if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE == 'apply'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          in_state() {
+            terraform -chdir=infrastructure/terraform state show -no-color "$1" >/dev/null 2>&1
+          }
+
+          delete_role() {
+            local role="$1"
+            if ! aws iam get-role --role-name "$role" >/dev/null 2>&1; then
+              echo "Role ${role} is already gone"
+              return 0
+            fi
+            echo "Deleting leftover role ${role}"
+            for arn in $(aws iam list-attached-role-policies --role-name "$role" --query "AttachedPolicies[].PolicyArn" --output text); do
+              [ "$arn" = "None" ] && continue
+              aws iam detach-role-policy --role-name "$role" --policy-arn "$arn" || true
+            done
+            for policy in $(aws iam list-role-policies --role-name "$role" --query "PolicyNames[]" --output text); do
+              [ "$policy" = "None" ] && continue
+              aws iam delete-role-policy --role-name "$role" --policy-name "$policy" || true
+            done
+            for profile in $(aws iam list-instance-profiles-for-role --role-name "$role" --query "InstanceProfiles[].InstanceProfileName" --output text); do
+              [ "$profile" = "None" ] && continue
+              aws iam remove-role-from-instance-profile --instance-profile-name "$profile" --role-name "$role" || true
+            done
+            aws iam delete-role --role-name "$role" || true
+          }
+
+          if ! in_state aws_iam_instance_profile.ec2; then
+            if aws iam get-instance-profile --instance-profile-name mouw-prod-ec2-profile >/dev/null 2>&1; then
+              echo "Deleting leftover instance profile mouw-prod-ec2-profile"
+              for role in $(aws iam get-instance-profile --instance-profile-name mouw-prod-ec2-profile --query "InstanceProfile.Roles[].RoleName" --output text); do
+                [ "$role" = "None" ] && continue
+                aws iam remove-role-from-instance-profile --instance-profile-name mouw-prod-ec2-profile --role-name "$role" || true
+              done
+              aws iam delete-instance-profile --instance-profile-name mouw-prod-ec2-profile || true
+            fi
+          fi
+
+          if ! in_state aws_iam_role.ec2; then
+            delete_role mouw-prod-ec2-role
+          fi
+          if ! in_state "aws_iam_role.github_actions_deploy[0]"; then
+            delete_role mouw-prod-github-actions-deploy
+          fi
+
+          if ! in_state aws_cloudwatch_log_group.backend; then
+            aws logs delete-log-group --log-group-name /mouw-prod/backend >/dev/null 2>&1 || true
+          fi
+          if ! in_state aws_cloudwatch_log_group.nginx; then
+            aws logs delete-log-group --log-group-name /mouw-prod/nginx >/dev/null 2>&1 || true
+          fi
+
+          if ! in_state aws_db_subnet_group.main; then
+            aws rds delete-db-subnet-group --db-subnet-group-name mouw-prod-db-subnets >/dev/null 2>&1 || true
+          fi
+          if ! in_state aws_db_parameter_group.postgres; then
+            aws rds delete-db-parameter-group --db-parameter-group-name mouw-prod-postgres16 >/dev/null 2>&1 || true
+          fi
+
+          if ! in_state aws_cloudfront_function.spa_router; then
+            etag="$(aws cloudfront describe-function --name mouw-prod-spa-router --stage LIVE --query ETag --output text 2>/dev/null || true)"
+            if [ -z "$etag" ] || [ "$etag" = "None" ]; then
+              etag="$(aws cloudfront describe-function --name mouw-prod-spa-router --stage DEVELOPMENT --query ETag --output text 2>/dev/null || true)"
+            fi
+            if [ -n "$etag" ] && [ "$etag" != "None" ]; then
+              echo "Deleting leftover CloudFront function mouw-prod-spa-router"
+              aws cloudfront delete-function --name mouw-prod-spa-router --if-match "$etag" || true
+            fi
+          fi
+
+          if ! in_state aws_cloudfront_response_headers_policy.security; then
+            policy_id="$(aws cloudfront list-response-headers-policies --type custom --query "ResponseHeadersPolicyList.Items[?ResponseHeadersPolicy.ResponseHeadersPolicyConfig.Name=='mouw-prod-security-headers'].ResponseHeadersPolicy.Id | [0]" --output text 2>/dev/null || true)"
+            if [ -n "$policy_id" ] && [ "$policy_id" != "None" ]; then
+              policy_etag="$(aws cloudfront get-response-headers-policy --id "$policy_id" --query ETag --output text)"
+              echo "Deleting leftover CloudFront headers policy mouw-prod-security-headers"
+              aws cloudfront delete-response-headers-policy --id "$policy_id" --if-match "$policy_etag" || true
+            fi
+          fi
+
+          if ! in_state "aws_wafv2_web_acl.site[0]"; then
+            waf_id="$(aws wafv2 list-web-acls --scope CLOUDFRONT --region us-east-1 --query "WebACLs[?Name=='mouw-prod-cloudfront-waf'].Id | [0]" --output text 2>/dev/null || true)"
+            waf_lock="$(aws wafv2 list-web-acls --scope CLOUDFRONT --region us-east-1 --query "WebACLs[?Name=='mouw-prod-cloudfront-waf'].LockToken | [0]" --output text 2>/dev/null || true)"
+            if [ -n "$waf_id" ] && [ "$waf_id" != "None" ] && [ -n "$waf_lock" ] && [ "$waf_lock" != "None" ]; then
+              echo "Deleting leftover WAF mouw-prod-cloudfront-waf"
+              aws wafv2 delete-web-acl --name mouw-prod-cloudfront-waf --scope CLOUDFRONT --id "$waf_id" --lock-token "$waf_lock" --region us-east-1 || true
+            fi
+          fi
+
+          if ! in_state "aws_sns_topic.alarms[0]"; then
+            topic_arn="$(aws sns list-topics --query "Topics[?ends_with(TopicArn, ':mouw-prod-alarms')].TopicArn | [0]" --output text 2>/dev/null || true)"
+            if [ -n "$topic_arn" ] && [ "$topic_arn" != "None" ]; then
+              echo "Deleting leftover alarm topic"
+              aws sns delete-topic --topic-arn "$topic_arn" || true
+            fi
+          fi
+
+          if ! in_state aws_cloudwatch_metric_alarm.ec2_cpu_high; then
+            aws cloudwatch delete-alarms --alarm-names mouw-prod-ec2-cpu-high mouw-prod-rds-cpu-high mouw-prod-waf-blocked-requests-high >/dev/null 2>&1 || true
+          fi
+
       - name: Terraform Apply on Manual Trigger
         if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE == 'apply'
         run: terraform -chdir=infrastructure/terraform apply -lock-timeout=300s -auto-approve tfplan
