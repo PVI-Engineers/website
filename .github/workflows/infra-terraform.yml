@@ -135,6 +135,19 @@ jobs:
             -backend-config="use_lockfile=true" \
             -backend-config="encrypt=true"
 
+      - name: Release stale Terraform lock
+        if: steps.secrets_check.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          lock_key="${TF_STATE_KEY}.tflock"
+          if aws s3api head-object --bucket "$TF_STATE_BUCKET" --key "$lock_key" >/dev/null 2>&1; then
+            echo "Removing stale lock s3://${TF_STATE_BUCKET}/${lock_key}"
+            aws s3api delete-object --bucket "$TF_STATE_BUCKET" --key "$lock_key"
+          else
+            echo "No stale lock file"
+          fi
+
       - name: Terraform Fmt
         if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE != 'destroy'
         run: terraform -chdir=infrastructure/terraform fmt -check -recursive
@@ -182,7 +195,7 @@ jobs:
             -out=tfplan
 
       - name: Allow replacement of the old database and buckets
-        if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE != 'destroy'
+        if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE == 'apply'
         shell: bash
         run: |
           set -euo pipefail
@@ -238,10 +251,6 @@ jobs:
           else
             echo "Database ${identifier} is already gone"
           fi
-
-      - name: Terraform Apply on Push
-        if: steps.secrets_check.outputs.ready == 'true' && github.event_name == 'push'
-        run: terraform -chdir=infrastructure/terraform apply -lock-timeout=300s -auto-approve tfplan
 
       - name: Terraform Apply on Manual Trigger
         if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE == 'apply'
@@ -321,7 +330,7 @@ jobs:
             -var="rds_skip_final_snapshot=true"
 
       - name: Publish Outputs Summary
-        if: steps.secrets_check.outputs.ready == 'true' && (github.event_name == 'push' || env.TF_MODE == 'apply')
+        if: steps.secrets_check.outputs.ready == 'true' && env.TF_MODE == 'apply'
         shell: bash
         run: |
           {
