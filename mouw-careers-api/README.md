@@ -1,6 +1,6 @@
 # MOUW Careers API
 
-Spring Boot backend for MOUW Engineering and Land Surveyors careers applications.
+Spring Boot backend for MOUW Engineering careers applications.
 
 ## Features
 

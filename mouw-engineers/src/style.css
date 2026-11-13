@@ -183,3 +183,34 @@ body:not([data-site-theme='dark']) .v-chip.v-chip--variant-tonal .v-chip__conten
   color: #0f2d4a;
   font-weight: 600;
 }
+
+@media (max-width: 960px) {
+  .v-main {
+    overflow-x: clip;
+  }
+
+  .v-table {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .v-list-item-title,
+  .v-expansion-panel-title {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
+
+  .v-selection-control {
+    align-items: flex-start;
+  }
+
+  .v-selection-control .v-label {
+    height: auto;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.45;
+  }
+}

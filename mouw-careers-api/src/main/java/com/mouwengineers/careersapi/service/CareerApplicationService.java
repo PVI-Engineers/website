@@ -404,7 +404,7 @@ public class CareerApplicationService {
             MimeMessageHelper helper = new MimeMessageHelper(message, false, StandardCharsets.UTF_8.name());
             helper.setFrom(senderAddress);
             helper.setTo(application.getEmail());
-            helper.setSubject("MOUW Engineering and Land Surveyors | Application Received | " + application.getJobRole());
+            helper.setSubject("MOUW Engineering | Application Received | " + application.getJobRole());
             helper.setText(buildApplicantMailBody(application), false);
             dispatchMimeMessage(message);
         } catch (Exception ex) {
@@ -546,7 +546,7 @@ public class CareerApplicationService {
         return """
                 Dear %s %s,
 
-                Thank you for applying to MOUW Engineering and Land Surveyors for the position of %s.
+                Thank you for applying to MOUW Engineering for the position of %s.
 
                 We have received your application successfully.
                 Application Reference: %s
@@ -555,7 +555,7 @@ public class CareerApplicationService {
 
                 Regards,
                 HR Team
-                MOUW Engineering and Land Surveyors
+                MOUW Engineering
                 """.formatted(
                 app.getFirstName(),
                 app.getLastName(),

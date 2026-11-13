@@ -7,13 +7,13 @@ import { homeHeroImage, homeWorkGallery } from '../data/siteMedia'
   <v-container class="page-shell">
     <v-row class="hero align-center" dense>
       <v-col cols="12" md="7">
-        <v-chip color="primary" variant="outlined" class="mb-5">Engineering and Land Surveying</v-chip>
+        <v-chip color="primary" variant="outlined" class="mb-5">Civil Engineering</v-chip>
         <h1 class="page-title">
-          MOUW Engineering and Land Surveyors
+          MOUW Engineering
           <span class="gradient-text">Road, Water, Drainage, and Infrastructure Specialists</span>
         </h1>
         <p class="page-copy">
-          MOUW Engineering and Land Surveyors provides civil engineering and land surveying for
+          MOUW Engineering provides civil engineering for
           roads, water systems, drainage, and infrastructure projects.
         </p>
         <div class="mt-7 d-flex ga-3 flex-wrap">

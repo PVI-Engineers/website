@@ -1,4 +1,4 @@
-# MOUW Engineering and Land Surveyors - Full AWS Deployment Guide
+# MOUW Engineering - Full AWS Deployment Guide
 
 This guide matches your requested stack:
 

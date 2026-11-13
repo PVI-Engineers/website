@@ -157,7 +157,7 @@ public class ContactInquiryService {
             MimeMessageHelper helper = new MimeMessageHelper(message, false, StandardCharsets.UTF_8.name());
             helper.setFrom(senderAddress);
             helper.setTo(inquiry.getEmail());
-            helper.setSubject("MOUW Engineering and Land Surveyors | Inquiry Received | " + inquiry.getInquiryRef());
+            helper.setSubject("MOUW Engineering | Inquiry Received | " + inquiry.getInquiryRef());
             helper.setText(buildSubmitterMailBody(inquiry), false);
             dispatchMimeMessage(message);
         } catch (Exception ex) {
@@ -243,7 +243,7 @@ public class ContactInquiryService {
         return """
                 Dear %s,
 
-                Thank you for contacting MOUW Engineering and Land Surveyors.
+                Thank you for contacting MOUW Engineering.
 
                 We have received your inquiry successfully.
                 Inquiry Reference: %s
@@ -252,7 +252,7 @@ public class ContactInquiryService {
                 Our team will review your message and connect with you shortly.
 
                 Regards,
-                Team MOUW Engineering and Land Surveyors
+                Team MOUW Engineering
                 """.formatted(
                 inquiry.getName(),
                 inquiry.getInquiryRef(),

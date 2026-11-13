@@ -14,8 +14,8 @@ const quickLinks = [
       <p class="section-kicker">Careers</p>
       <h1 class="page-title">Build Your Career in High-Impact Infrastructure Engineering</h1>
       <p class="page-copy">
-        MOUW Engineering and Land Surveyors is hiring experienced professionals across road design,
-        water systems, drainage, and land surveying. Review open positions, the hiring process, and
+        MOUW Engineering is hiring experienced professionals across road design,
+        water systems, and drainage. Review open positions, the hiring process, and
         our work culture.
       </p>
       <div class="mt-7 d-flex ga-3 flex-wrap">

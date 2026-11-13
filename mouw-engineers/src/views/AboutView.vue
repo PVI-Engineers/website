@@ -18,7 +18,7 @@ const principles = [
 ]
 
 const milestones = [
-  { year: '2018', title: 'MOUW Engineering and Land Surveyors founded', detail: 'Started with a mission to modernize civil design and land surveying.' },
+  { year: '2018', title: 'MOUW Engineering founded', detail: 'Started with a mission to modernize civil design.' },
   { year: '2020', title: 'Expanded into water systems', detail: 'Launched integrated planning services for municipal water infrastructure.' },
   { year: '2023', title: 'Digital modeling practice scaled', detail: 'Adopted simulation-first project delivery for complex city programs.' },
   { year: '2026', title: 'Pan-regional project footprint', detail: 'Serving public and private infrastructure clients across multiple states.' },
@@ -49,7 +49,7 @@ const leadership = [
       <p class="section-kicker">About us</p>
       <h1 class="page-title">Designing Essential Infrastructure That Lasts for Generations</h1>
       <p class="page-copy">
-        MOUW Engineering and Land Surveyors is an engineering and land surveying company focused on
+        MOUW Engineering is a civil engineering company focused on
         road design, water management, and drainage systems. We combine practical engineering
         expertise with digital modeling to help cities build resilient and future-ready infrastructure.
       </p>

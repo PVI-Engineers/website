@@ -10,6 +10,7 @@ const route = useRoute()
 const theme = useTheme()
 
 const activePath = computed(() => route.path)
+const isEmployeePortal = computed(() => route.path.startsWith('/portal/employee'))
 const desktopRows = [serviceButtons, companyButtons]
 const desktopLabels = ['Service Domains', 'Company Sections']
 const year = new Date().getFullYear()
@@ -63,13 +64,14 @@ onMounted(() => {
 
 <template>
   <v-app class="mouw-app">
-    <div class="ambient-lights" aria-hidden="true">
+    <div v-if="!isEmployeePortal" class="ambient-lights" aria-hidden="true">
       <span class="light-orb orb-one"></span>
       <span class="light-orb orb-two"></span>
       <span class="light-orb orb-three"></span>
     </div>
 
     <v-navigation-drawer
+      v-if="!isEmployeePortal"
       v-model="drawer"
       class="mobile-drawer d-lg-none"
       location="right"
@@ -154,12 +156,12 @@ onMounted(() => {
       </v-list>
     </v-navigation-drawer>
 
-    <v-app-bar class="top-bar" flat height="110">
+    <v-app-bar v-if="!isEmployeePortal" class="top-bar" flat height="110">
       <v-container class="top-inner">
         <router-link class="brand-link" to="/">
           <span class="brand-mark">MOUW</span>
           <span class="brand-copy">
-            <strong>MOUW Engineering and Land Surveyors</strong>
+            <strong>MOUW Engineering</strong>
             <small>Road, Water, Drainage & Civil Systems</small>
           </span>
         </router-link>
@@ -275,15 +277,15 @@ onMounted(() => {
       </v-container>
     </v-app-bar>
 
-    <v-main>
+    <v-main :class="{ 'portal-workspace': isEmployeePortal }">
       <router-view />
     </v-main>
 
-    <v-footer class="site-footer">
+    <v-footer v-if="!isEmployeePortal" class="site-footer">
       <v-container class="py-8">
         <v-row>
           <v-col cols="12" md="4">
-            <h3 class="footer-title">MOUW Engineering and Land Surveyors</h3>
+            <h3 class="footer-title">MOUW Engineering</h3>
             <p class="footer-copy">
               Futuristic civil engineering website with dedicated pages for every menu and dropdown
               option.
@@ -324,7 +326,7 @@ onMounted(() => {
         <v-divider class="my-6" />
         <div class="footer-bottom">
           <p class="footer-meta">
-            © {{ year }} MOUW Engineering and Land Surveyors. All rights reserved.
+            © {{ year }} MOUW Engineering. All rights reserved.
           </p>
         </div>
       </v-container>
@@ -335,6 +337,11 @@ onMounted(() => {
 <style scoped>
 .mouw-app {
   background: transparent;
+}
+
+.portal-workspace {
+  padding: 0 !important;
+  background: #f6f7f5;
 }
 
 .ambient-lights {
@@ -592,9 +599,51 @@ onMounted(() => {
   background: var(--drawer-bg);
 }
 
+.mobile-drawer :deep(.v-list-item-title) {
+  white-space: normal;
+  line-height: 1.35;
+}
+
 @media (max-width: 1420px) {
   .mega-menu-card {
     width: 690px !important;
+  }
+}
+
+@media (max-width: 1279px) {
+  .top-bar :deep(.v-toolbar__content) {
+    min-height: 72px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .brand-mark {
+    width: 52px;
+    height: 38px;
+    font-size: 0.62rem;
+  }
+
+  .brand-copy strong,
+  .brand-copy small {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .top-inner {
+    gap: 8px;
+  }
+
+  .brand-link {
+    gap: 8px;
+  }
+
+  .brand-copy strong {
+    font-size: 0.76rem;
+  }
+
+  .brand-copy small {
+    font-size: 0.64rem;
   }
 }
 

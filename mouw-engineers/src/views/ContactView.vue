@@ -126,7 +126,7 @@ async function submitForm() {
           <h2 class="card-title">Contact Information</h2>
           <div class="info-group mt-6">
             <p class="info-label">Office</p>
-            <p class="info-value">MOUW Engineering and Land Surveyors</p>
+            <p class="info-value">MOUW Engineering</p>
           </div>
           <div class="info-group mt-4">
             <p class="info-label">Email</p>
@@ -317,5 +317,6 @@ async function submitForm() {
   margin: 0;
   color: var(--text-card-copy);
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 </style>

@@ -44,7 +44,7 @@ const filteredOpenings = computed(() =>
   <v-container class="page-shell">
     <section>
       <p class="section-kicker">Careers • Open Positions</p>
-      <h1 class="page-title">Current Openings at MOUW Engineering and Land Surveyors</h1>
+      <h1 class="page-title">Current Openings at MOUW Engineering</h1>
       <p class="page-copy">
         Explore role details in a clear MNC-style format including job overview, responsibilities,
         qualifications, preferred skills, tools, and benefits.
@@ -202,7 +202,7 @@ const filteredOpenings = computed(() =>
             </v-list>
 
             <v-alert class="mt-4" type="info" variant="tonal" border="start">
-              MOUW Engineering and Land Surveyors is an equal opportunity employer. Selection is based on role fit,
+              MOUW Engineering is an equal opportunity employer. Selection is based on role fit,
               capability, and alignment with project requirements.
             </v-alert>
 
@@ -271,10 +271,24 @@ const filteredOpenings = computed(() =>
 
 .job-head {
   width: 100%;
+  min-width: 0;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  flex-wrap: wrap;
   gap: 12px;
+}
+
+.job-head > div {
+  min-width: 0;
+  flex: 1 1 180px;
+}
+
+:deep(.v-expansion-panel-title) {
+  align-items: flex-start;
+  min-height: 0;
+  padding-top: 14px;
+  padding-bottom: 14px;
 }
 
 .job-title {
@@ -287,6 +301,7 @@ const filteredOpenings = computed(() =>
   margin: 6px 0 0;
   color: var(--text-path);
   font-size: 0.86rem;
+  overflow-wrap: anywhere;
 }
 
 .job-id {

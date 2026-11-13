@@ -163,8 +163,10 @@ const deliveryHighlights = [
 .location {
   margin: 0;
   color: var(--text-path);
-  display: inline-flex;
-  align-items: center;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  overflow-wrap: anywhere;
 }
 
 .card-copy {
