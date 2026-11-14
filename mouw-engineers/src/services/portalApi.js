@@ -148,6 +148,24 @@ async function submitEmployeeTimesheet(payload) {
   })
 }
 
+async function updateEmployeeProfile(payload) {
+  return request('/api/employee/profile', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+async function changePortalPassword(payload) {
+  const data = await request('/api/auth/password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  saveSession(data)
+  return data
+}
+
 async function fetchAdminProjects() {
   return request('/api/admin/projects')
 }
@@ -242,6 +260,7 @@ async function downloadApplicationFile(applicationId, fileId) {
 }
 
 export {
+  changePortalPassword,
   clearSession,
   downloadApplicationFile,
   downloadResume,
@@ -264,4 +283,5 @@ export {
   saveAdminEmployee,
   saveAdminProject,
   submitEmployeeTimesheet,
+  updateEmployeeProfile,
 }

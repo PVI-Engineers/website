@@ -4,6 +4,7 @@ import com.mouwengineering.careersapi.dto.portal.ActivityResponse;
 import com.mouwengineering.careersapi.dto.portal.EmployeeDashboardResponse;
 import com.mouwengineering.careersapi.dto.portal.EmployeeResponse;
 import com.mouwengineering.careersapi.dto.portal.HoursSummaryResponse;
+import com.mouwengineering.careersapi.dto.portal.ProfileUpdateRequest;
 import com.mouwengineering.careersapi.dto.portal.ProjectResponse;
 import com.mouwengineering.careersapi.dto.portal.TimesheetResponse;
 import com.mouwengineering.careersapi.dto.portal.TimesheetSubmitRequest;
@@ -90,6 +91,17 @@ public class EmployeePortalService {
         return toTimesheet(timesheetEntryRepository.save(entry));
     }
 
+    @Transactional
+    public EmployeeResponse updateProfile(Authentication authentication, ProfileUpdateRequest request) {
+        AppUser employee = requireEmployee(authentication);
+        String phone = request.phone() == null ? "" : request.phone().trim();
+        if (!phone.isEmpty() && !phone.matches("^[0-9+()\\-\\s]{7,40}$")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Enter a valid phone number.");
+        }
+        employee.setPhone(phone.isEmpty() ? null : phone);
+        return toEmployee(employee, activeProjects(employee));
+    }
+
     private AppUser requireEmployee(Authentication authentication) {
         if (authentication == null || authentication.getName() == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Your session expired. Please login again.");
@@ -155,6 +167,7 @@ public class EmployeePortalService {
                 employee.getUsername(),
                 employee.getDesignation(),
                 employee.getDepartment(),
+                employee.getPhone(),
                 projects
         );
     }

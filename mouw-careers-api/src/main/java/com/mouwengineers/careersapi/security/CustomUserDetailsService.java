@@ -21,13 +21,16 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return appUserRepository.findByUsernameOrEmailIgnoreCase(username)
-                .map(user -> User.withUsername(user.getUsername())
-                        .password(user.getPasswordHash())
-                        .authorities(user.getRoles().stream()
-                                .map(UserRole::name)
-                                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                                .toList())
-                        .build())
+                .map(user -> new PortalUserDetails(
+                        User.withUsername(user.getUsername())
+                                .password(user.getPasswordHash())
+                                .authorities(user.getRoles().stream()
+                                        .map(UserRole::name)
+                                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                                        .toList())
+                                .build(),
+                        user.getCredentialsUpdatedAt()
+                ))
                 .orElseThrow(() -> new UsernameNotFoundException("Invalid username or password"));
     }
 }

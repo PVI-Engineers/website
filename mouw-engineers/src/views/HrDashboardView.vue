@@ -1,22 +1,22 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import PortalShell from '../components/PortalShell.vue'
 import {
-  clearSession,
   downloadApplicationFile,
   downloadResume,
   fetchHrApplications,
   fetchHrContactInquiries,
   getStoredUser,
+  hasRole,
 } from '../services/portalApi'
-
-const router = useRouter()
 const loading = ref(true)
 const downloadLoadingKey = ref('')
 const errorMessage = ref('')
 const applications = ref([])
 const contactInquiries = ref([])
 const portalUser = ref(getStoredUser())
+const hrNav = [{ id: 'applications', label: 'Applications', icon: 'mdi-file-document-outline' }]
+const canOpenAdmin = computed(() => hasRole('ADMIN'))
 
 const applicationCount = computed(() => applications.value.length)
 const contactInquiryCount = computed(() => contactInquiries.value.length)
@@ -84,15 +84,11 @@ async function onDownloadFile(application, file) {
   }
 }
 
-function logout() {
-  clearSession()
-  router.replace('/portal/login')
-}
-
 onMounted(loadApplications)
 </script>
 
 <template>
+  <PortalShell eyebrow="HR Portal" :items="hrNav" section="applications">
   <v-container class="page-shell">
     <section class="d-flex justify-space-between align-start flex-wrap ga-4">
       <div>
@@ -105,8 +101,7 @@ onMounted(loadApplications)
       </div>
       <div class="d-flex ga-2 flex-wrap">
         <v-btn color="primary" variant="tonal" @click="loadApplications">Refresh</v-btn>
-        <v-btn color="secondary" variant="tonal" to="/portal/admin">Admin View</v-btn>
-        <v-btn color="error" variant="text" @click="logout">Logout</v-btn>
+        <v-btn v-if="canOpenAdmin" color="secondary" variant="tonal" to="/portal/admin">Admin View</v-btn>
       </div>
     </section>
 
@@ -261,6 +256,7 @@ onMounted(loadApplications)
       </v-table>
     </v-card>
   </v-container>
+  </PortalShell>
 </template>
 
 <style scoped>

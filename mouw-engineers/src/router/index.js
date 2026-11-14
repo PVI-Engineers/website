@@ -125,12 +125,16 @@ router.beforeEach((to) => {
     return true
   }
 
+  const token = getStoredToken()
+  const user = getStoredUser()
+
+  if (token && user && !to.path.startsWith('/portal')) {
+    return resolvePortalRoute(user.roles || [])
+  }
+
   if (!to.meta?.requiresAuth) {
     return true
   }
-
-  const token = getStoredToken()
-  const user = getStoredUser()
 
   if (!token || !user) {
     return {

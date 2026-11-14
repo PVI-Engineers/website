@@ -56,61 +56,41 @@ async function submitLogin() {
 </script>
 
 <template>
-  <v-container class="page-shell">
-    <section>
-      <p class="section-kicker">Internal Portal</p>
-      <h1 class="page-title">Employee and HR Login</h1>
-      <p class="page-copy">
-        Login with your portal credentials to access role-specific dashboards for Employee, HR, and
-        Admin operations.
-      </p>
-    </section>
-
-    <v-card class="glass-card pa-6 mt-8">
-      <p class="mini-kicker mb-3">Portal Access</p>
-      <v-form ref="formRef" @submit.prevent="submitLogin">
-        <v-row dense>
-          <v-col cols="12">
-            <v-text-field v-model="form.username" :rules="[required]" label="Username or Email *" />
-          </v-col>
-          <v-col cols="12">
+  <v-container class="login-shell">
+    <v-row justify="center">
+      <v-col cols="12" sm="10" md="7" lg="5">
+        <v-card class="glass-card pa-6 pa-sm-8">
+          <p class="section-kicker">MOUW Engineering</p>
+          <h1 class="page-title">Portal sign in</h1>
+          <p class="page-copy">
+            Use your employee, HR, or admin account. After sign in you stay in your portal until you log out.
+          </p>
+          <v-form ref="formRef" class="mt-6" @submit.prevent="submitLogin">
+            <v-text-field v-model="form.username" :rules="[required]" label="Username or email" autocomplete="username" />
             <v-text-field
               v-model="form.password"
               :rules="[required]"
-              label="Password *"
+              label="Password"
               type="password"
+              autocomplete="current-password"
             />
-          </v-col>
-        </v-row>
-
-        <v-alert v-if="errorMessage" class="mt-2" type="error" variant="tonal" border="start">
-          {{ errorMessage }}
-        </v-alert>
-
-        <div class="d-flex ga-3 mt-5 flex-wrap">
-          <v-btn :loading="loading" color="primary" type="submit">Login</v-btn>
-          <v-btn to="/careers/open-positions" variant="tonal">Back to Careers</v-btn>
-        </div>
-      </v-form>
-    </v-card>
-
-    <v-card class="glass-card pa-6 mt-6">
-      <p class="mini-kicker mb-3">Default Accounts (Change in environment)</p>
-      <ul class="quick-list">
-        <li>Admin: <code>admin@mouw.local</code> / <code>Admin@123</code></li>
-        <li>HR: <code>hr@mouw.local</code> / <code>Hr@123</code></li>
-        <li>Employee: <code>employee@mouw.local</code> / <code>Employee@123</code></li>
-      </ul>
-    </v-card>
+            <v-alert v-if="errorMessage" class="mb-4" type="error" variant="tonal" border="start">
+              {{ errorMessage }}
+            </v-alert>
+            <v-btn :loading="loading" block color="primary" size="large" type="submit">Sign in</v-btn>
+          </v-form>
+        </v-card>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 
 <style scoped>
-.page-shell {
+.login-shell {
   position: relative;
   z-index: 1;
-  padding-top: 44px;
-  padding-bottom: 44px;
+  padding-top: 48px;
+  padding-bottom: 48px;
 }
 
 .section-kicker,

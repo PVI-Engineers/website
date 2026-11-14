@@ -1,15 +1,32 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { clearSession, fetchEmployeeDashboard, submitEmployeeTimesheet } from '../services/portalApi'
+import PortalShell from '../components/PortalShell.vue'
+import {
+  changePortalPassword,
+  fetchEmployeeDashboard,
+  submitEmployeeTimesheet,
+  updateEmployeeProfile,
+} from '../services/portalApi'
 
-const router = useRouter()
 const loading = ref(true)
 const saving = ref(false)
+const profileSaving = ref(false)
+const passwordSaving = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 const dashboard = ref(null)
+const section = ref('dashboard')
+const phone = ref('')
+const passwordForm = ref({ currentPassword: '', newPassword: '', confirmPassword: '' })
 const form = ref(emptyForm())
+
+const navItems = [
+  { id: 'dashboard', label: 'Dashboard', icon: 'mdi-view-dashboard-outline' },
+  { id: 'profile', label: 'My profile', icon: 'mdi-account-outline' },
+  { id: 'projects', label: 'Projects', icon: 'mdi-folder-outline' },
+  { id: 'timesheet', label: 'Submit time', icon: 'mdi-clock-outline' },
+  { id: 'history', label: 'Timesheets', icon: 'mdi-format-list-bulleted' },
+]
 
 const projects = computed(() => dashboard.value?.projects || [])
 const timesheets = computed(() => dashboard.value?.timesheets || [])
@@ -58,6 +75,7 @@ async function loadDashboard() {
   errorMessage.value = ''
   try {
     dashboard.value = await fetchEmployeeDashboard()
+    phone.value = dashboard.value?.profile?.phone || ''
     if (!form.value.projectId && projects.value.length === 1) {
       form.value.projectId = projects.value[0].id
     }
@@ -107,174 +125,200 @@ async function onSubmit() {
   }
 }
 
-function logout() {
-  clearSession()
-  router.replace('/portal/login')
+async function saveProfile() {
+  successMessage.value = ''
+  errorMessage.value = ''
+  profileSaving.value = true
+  try {
+    await updateEmployeeProfile({ phone: phone.value.trim() })
+    successMessage.value = 'Your contact number was updated.'
+    await loadDashboard()
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : 'Unable to update your profile.'
+  } finally {
+    profileSaving.value = false
+  }
+}
+
+async function savePassword() {
+  successMessage.value = ''
+  errorMessage.value = ''
+  if (passwordForm.value.newPassword.length < 8) {
+    errorMessage.value = 'New password must be at least 8 characters.'
+    return
+  }
+  if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
+    errorMessage.value = 'New password and confirmation do not match.'
+    return
+  }
+  passwordSaving.value = true
+  try {
+    await changePortalPassword({
+      currentPassword: passwordForm.value.currentPassword,
+      newPassword: passwordForm.value.newPassword,
+    })
+    passwordForm.value = { currentPassword: '', newPassword: '', confirmPassword: '' }
+    successMessage.value = 'Password changed. This session is still signed in.'
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : 'Unable to change your password.'
+  } finally {
+    passwordSaving.value = false
+  }
 }
 
 onMounted(loadDashboard)
 </script>
 
 <template>
-  <v-container class="page-shell">
-    <section class="d-flex justify-space-between align-start flex-wrap ga-4">
-      <div>
-        <p class="section-kicker">Employee Portal</p>
-        <h1 class="page-title">{{ profile.fullName || 'Employee dashboard' }}</h1>
-        <p class="page-copy">
-          Review your profile, assigned projects, and working hours, then submit the work completed on each project.
-        </p>
-      </div>
-      <div class="d-flex ga-2 flex-wrap">
-        <v-btn color="primary" variant="tonal" @click="loadDashboard">Refresh</v-btn>
-        <v-btn color="error" variant="text" @click="logout">Logout</v-btn>
-      </div>
-    </section>
-
-    <v-alert v-if="errorMessage" class="mt-6" type="error" variant="tonal" border="start">
+  <PortalShell v-model:section="section" eyebrow="Employee Portal" :items="navItems">
+    <v-alert v-if="errorMessage" class="mb-4" type="error" variant="tonal" border="start">
       {{ errorMessage }}
     </v-alert>
-    <v-alert v-if="successMessage" class="mt-6" type="success" variant="tonal" border="start">
+    <v-alert v-if="successMessage" class="mb-4" type="success" variant="tonal" border="start">
       {{ successMessage }}
     </v-alert>
 
-    <v-card v-if="loading" class="glass-card pa-8 mt-6 text-center">
+    <v-card v-if="loading" class="glass-card pa-8 text-center">
       <v-progress-circular color="primary" indeterminate />
       <p class="page-copy mt-4">Loading employee portal...</p>
     </v-card>
 
     <template v-else>
-      <v-row class="mt-2" dense>
-        <v-col cols="12" sm="6" lg="3">
-          <v-card class="glass-card pa-5">
-            <p class="mini-kicker">Total hours</p>
-            <p class="metric mt-2">{{ hoursLabel(summary.totalHours) }}</p>
-          </v-card>
-        </v-col>
-        <v-col cols="12" sm="6" lg="3">
-          <v-card class="glass-card pa-5">
-            <p class="mini-kicker">Pending review</p>
-            <p class="metric mt-2">{{ hoursLabel(summary.pendingHours) }}</p>
-          </v-card>
-        </v-col>
-        <v-col cols="12" sm="6" lg="3">
-          <v-card class="glass-card pa-5">
-            <p class="mini-kicker">Approved</p>
-            <p class="metric mt-2">{{ hoursLabel(summary.approvedHours) }}</p>
-          </v-card>
-        </v-col>
-        <v-col cols="12" sm="6" lg="3">
-          <v-card class="glass-card pa-5">
-            <p class="mini-kicker">Assigned projects</p>
-            <p class="metric mt-2">{{ projects.length }}</p>
-          </v-card>
-        </v-col>
-      </v-row>
-
-      <v-row class="mt-2" dense>
-        <v-col cols="12" lg="5">
-          <v-card class="glass-card pa-6 h-100">
-            <p class="mini-kicker">Employee details</p>
-            <v-row class="mt-2" dense>
-              <v-col cols="12" sm="6">
-                <p class="meta-label">Employee ID</p>
-                <p class="meta-value">{{ display(profile.employeeCode) }}</p>
-              </v-col>
-              <v-col cols="12" sm="6">
-                <p class="meta-label">Name</p>
-                <p class="meta-value">{{ display(profile.fullName) }}</p>
-              </v-col>
-              <v-col cols="12" sm="6">
-                <p class="meta-label">Designation</p>
-                <p class="meta-value">{{ display(profile.designation) }}</p>
-              </v-col>
-              <v-col cols="12" sm="6">
-                <p class="meta-label">Department</p>
-                <p class="meta-value">{{ display(profile.department) }}</p>
-              </v-col>
-              <v-col cols="12">
-                <p class="meta-label">Email</p>
-                <p class="meta-value">{{ display(profile.email) }}</p>
-              </v-col>
-            </v-row>
-          </v-card>
-        </v-col>
-        <v-col cols="12" lg="7">
-          <v-card class="glass-card pa-6 h-100">
-            <p class="mini-kicker">Assigned projects</p>
-            <p v-if="projects.length === 0" class="page-copy">
-              No projects are assigned yet. An administrator needs to assign your projects before you can submit time.
-            </p>
-            <div v-else class="d-flex flex-column ga-3 mt-4">
-              <div v-for="project in projects" :key="project.id" class="project-row">
-                <div>
-                  <p class="meta-value">{{ project.name }}</p>
-                  <p class="meta-label mt-1">{{ project.code }}</p>
-                </div>
-                <p class="project-copy">{{ project.description || 'Active project assignment' }}</p>
-              </div>
+      <div v-show="section === 'dashboard'">
+        <v-row dense>
+          <v-col cols="12" sm="6" lg="3">
+            <v-card class="glass-card pa-5">
+              <p class="mini-kicker">Total hours</p>
+              <p class="metric mt-2">{{ hoursLabel(summary.totalHours) }}</p>
+            </v-card>
+          </v-col>
+          <v-col cols="12" sm="6" lg="3">
+            <v-card class="glass-card pa-5">
+              <p class="mini-kicker">Pending review</p>
+              <p class="metric mt-2">{{ hoursLabel(summary.pendingHours) }}</p>
+            </v-card>
+          </v-col>
+          <v-col cols="12" sm="6" lg="3">
+            <v-card class="glass-card pa-5">
+              <p class="mini-kicker">Approved</p>
+              <p class="metric mt-2">{{ hoursLabel(summary.approvedHours) }}</p>
+            </v-card>
+          </v-col>
+          <v-col cols="12" sm="6" lg="3">
+            <v-card class="glass-card pa-5">
+              <p class="mini-kicker">Assigned projects</p>
+              <p class="metric mt-2">{{ projects.length }}</p>
+            </v-card>
+          </v-col>
+        </v-row>
+        <v-card class="glass-card pa-6 mt-4">
+          <p class="mini-kicker">Recent activity</p>
+          <p v-if="!(dashboard?.recentActivity || []).length" class="page-copy">
+            Submitted and reviewed timesheets will appear here.
+          </p>
+          <div v-else class="d-flex flex-column ga-3 mt-4">
+            <div v-for="item in dashboard.recentActivity" :key="item.id" class="project-row">
+              <p class="meta-value">{{ item.message }}</p>
+              <p class="meta-label">{{ formatDateTime(item.occurredAt) }}</p>
             </div>
-          </v-card>
-        </v-col>
-      </v-row>
+          </div>
+        </v-card>
+      </div>
 
-      <v-row class="mt-2" dense>
-        <v-col cols="12" lg="5">
-          <v-card class="glass-card pa-6">
-            <p class="mini-kicker">Submit timesheet</p>
-            <v-form class="mt-4" @submit.prevent="onSubmit">
-              <v-select
-                v-model="form.projectId"
-                class="mb-3"
-                :items="projects"
-                item-title="name"
-                item-value="id"
-                label="Assigned project"
-                :disabled="projects.length === 0"
-                no-data-text="No assigned projects"
-              />
-              <v-text-field v-model="form.workDate" class="mb-3" label="Work date" type="date" :max="today" />
-              <v-text-field
-                v-model="form.hours"
-                class="mb-3"
-                label="Hours worked"
-                type="number"
-                min="0.25"
-                max="24"
-                step="0.25"
-              />
-              <v-textarea
-                v-model="form.workDescription"
-                class="mb-4"
-                label="Work status"
-                rows="4"
-                counter="2000"
-                placeholder="Describe the tasks completed on this project."
-              />
-              <v-btn :loading="saving" color="primary" type="submit" :disabled="projects.length === 0">
-                Submit timesheet
-              </v-btn>
-            </v-form>
-          </v-card>
-        </v-col>
-        <v-col cols="12" lg="7">
-          <v-card class="glass-card pa-6 h-100">
-            <p class="mini-kicker">Recent activity</p>
-            <p v-if="!(dashboard?.recentActivity || []).length" class="page-copy">
-              Submitted and reviewed timesheets will appear here.
-            </p>
-            <div v-else class="d-flex flex-column ga-3 mt-4">
-              <div v-for="item in dashboard.recentActivity" :key="item.id" class="project-row">
-                <p class="meta-value">{{ item.message }}</p>
-                <p class="meta-label">{{ formatDateTime(item.occurredAt) }}</p>
-              </div>
-            </div>
-          </v-card>
-        </v-col>
-      </v-row>
+      <div v-show="section === 'profile'">
+        <v-row dense>
+          <v-col cols="12" lg="6">
+            <v-card class="glass-card pa-6">
+              <p class="mini-kicker">Employment details</p>
+              <p class="page-copy">Employee ID, role, department, and email are managed by an administrator.</p>
+              <v-row class="mt-2" dense>
+                <v-col cols="12" sm="6">
+                  <p class="meta-label">Employee ID</p>
+                  <p class="meta-value">{{ display(profile.employeeCode) }}</p>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <p class="meta-label">Name</p>
+                  <p class="meta-value">{{ display(profile.fullName) }}</p>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <p class="meta-label">Designation</p>
+                  <p class="meta-value">{{ display(profile.designation) }}</p>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <p class="meta-label">Department</p>
+                  <p class="meta-value">{{ display(profile.department) }}</p>
+                </v-col>
+                <v-col cols="12">
+                  <p class="meta-label">Email</p>
+                  <p class="meta-value">{{ display(profile.email) }}</p>
+                </v-col>
+              </v-row>
+            </v-card>
+          </v-col>
+          <v-col cols="12" lg="6">
+            <v-card class="glass-card pa-6 mb-4">
+              <p class="mini-kicker">Contact number</p>
+              <v-form class="mt-4" @submit.prevent="saveProfile">
+                <v-text-field v-model="phone" label="Phone number" placeholder="+1 605 592 0819" />
+                <v-btn :loading="profileSaving" color="primary" type="submit">Save contact number</v-btn>
+              </v-form>
+            </v-card>
+            <v-card class="glass-card pa-6">
+              <p class="mini-kicker">Change password</p>
+              <v-form class="mt-4" @submit.prevent="savePassword">
+                <v-text-field v-model="passwordForm.currentPassword" class="mb-3" label="Current password" type="password" />
+                <v-text-field v-model="passwordForm.newPassword" class="mb-3" label="New password" type="password" />
+                <v-text-field v-model="passwordForm.confirmPassword" class="mb-4" label="Confirm new password" type="password" />
+                <v-btn :loading="passwordSaving" color="primary" type="submit">Update password</v-btn>
+              </v-form>
+            </v-card>
+          </v-col>
+        </v-row>
+      </div>
 
-      <v-card class="glass-card pa-6 mt-4">
-        <p class="mini-kicker mb-3">Submitted timesheets</p>
+      <v-card v-show="section === 'projects'" class="glass-card pa-6">
+        <p class="mini-kicker">Assigned projects</p>
+        <p v-if="projects.length === 0" class="page-copy">
+          No projects are assigned yet. An administrator needs to assign your projects before you can submit time.
+        </p>
+        <div v-else class="d-flex flex-column ga-3 mt-4">
+          <div v-for="project in projects" :key="project.id" class="project-row">
+            <p class="meta-value">{{ project.name }}</p>
+            <p class="meta-label mt-1">{{ project.code }}</p>
+            <p class="project-copy">{{ project.description || 'Active project assignment' }}</p>
+          </div>
+        </div>
+      </v-card>
+
+      <v-card v-show="section === 'timesheet'" class="glass-card pa-6">
+        <p class="mini-kicker">Submit timesheet</p>
+        <v-form class="mt-4" @submit.prevent="onSubmit">
+          <v-select
+            v-model="form.projectId"
+            class="mb-3"
+            :items="projects"
+            item-title="name"
+            item-value="id"
+            label="Assigned project"
+            :disabled="projects.length === 0"
+            no-data-text="No assigned projects"
+          />
+          <v-text-field v-model="form.workDate" class="mb-3" label="Work date" type="date" :max="today" />
+          <v-text-field v-model="form.hours" class="mb-3" label="Hours worked" type="number" min="0.25" max="24" step="0.25" />
+          <v-textarea
+            v-model="form.workDescription"
+            class="mb-4"
+            label="Work status"
+            rows="4"
+            counter="2000"
+            placeholder="Describe the tasks completed on this project."
+          />
+          <v-btn :loading="saving" color="primary" type="submit" :disabled="projects.length === 0">Submit timesheet</v-btn>
+        </v-form>
+      </v-card>
+
+      <v-card v-show="section === 'history'" class="glass-card pa-6">
+        <p class="mini-kicker mb-3">Timesheet history</p>
         <p v-if="timesheets.length === 0" class="page-copy">No timesheets have been submitted yet.</p>
         <div v-else class="table-scroll">
           <v-table class="transparent-table">
@@ -303,9 +347,8 @@ onMounted(loadDashboard)
         </div>
       </v-card>
     </template>
-  </v-container>
+  </PortalShell>
 </template>
-
 <style scoped>
 .page-shell {
   position: relative;

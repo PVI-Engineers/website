@@ -56,6 +56,11 @@ public class AppUser {
     @Column(length = 80)
     private String department;
 
+    @Column(length = 40)
+    private String phone;
+
+    private LocalDateTime credentialsUpdatedAt;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "employee_projects",
@@ -138,6 +143,22 @@ public class AppUser {
 
     public void setDepartment(String department) {
         this.department = department;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public LocalDateTime getCredentialsUpdatedAt() {
+        return credentialsUpdatedAt;
+    }
+
+    public void setCredentialsUpdatedAt(LocalDateTime credentialsUpdatedAt) {
+        this.credentialsUpdatedAt = credentialsUpdatedAt;
     }
 
     public List<Project> getAssignedProjects() {

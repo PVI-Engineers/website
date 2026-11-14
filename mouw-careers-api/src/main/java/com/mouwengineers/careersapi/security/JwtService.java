@@ -5,6 +5,8 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -57,9 +59,19 @@ public class JwtService {
         return List.of();
     }
 
-    public boolean isTokenValid(String token, UserDetails userDetails) {
+    public boolean isTokenValid(String token, UserDetails userDetails, LocalDateTime credentialsUpdatedAt) {
         String username = extractUsername(token);
-        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+        if (!username.equals(userDetails.getUsername()) || isTokenExpired(token)) {
+            return false;
+        }
+        if (credentialsUpdatedAt == null) {
+            return true;
+        }
+        Date issuedAt = extractClaim(token, Claims::getIssuedAt);
+        if (issuedAt == null) {
+            return false;
+        }
+        return !issuedAt.toInstant().isBefore(credentialsUpdatedAt.atZone(ZoneId.systemDefault()).toInstant());
     }
 
     private boolean isTokenExpired(String token) {

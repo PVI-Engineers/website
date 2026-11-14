@@ -2,10 +2,12 @@ package com.mouwengineering.careersapi.controller;
 
 import com.mouwengineering.careersapi.dto.auth.LoginRequest;
 import com.mouwengineering.careersapi.dto.auth.LoginResponse;
+import com.mouwengineering.careersapi.dto.auth.PasswordChangeRequest;
 import com.mouwengineering.careersapi.dto.auth.UserProfileResponse;
 import com.mouwengineering.careersapi.model.AppUser;
 import com.mouwengineering.careersapi.repository.AppUserRepository;
 import com.mouwengineering.careersapi.security.JwtService;
+import com.mouwengineering.careersapi.service.AccountSecurityService;
 import jakarta.validation.Valid;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -33,15 +35,18 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final AppUserRepository appUserRepository;
     private final JwtService jwtService;
+    private final AccountSecurityService accountSecurityService;
 
     public AuthController(
             AuthenticationManager authenticationManager,
             AppUserRepository appUserRepository,
-            JwtService jwtService
+            JwtService jwtService,
+            AccountSecurityService accountSecurityService
     ) {
         this.authenticationManager = authenticationManager;
         this.appUserRepository = appUserRepository;
         this.jwtService = jwtService;
+        this.accountSecurityService = accountSecurityService;
     }
 
     @PostMapping("/login")
@@ -81,6 +86,14 @@ public class AuthController {
                 user.getEmail(),
                 roles
         ));
+    }
+
+    @PostMapping("/password")
+    public ResponseEntity<LoginResponse> changePassword(
+            Authentication authentication,
+            @Valid @RequestBody PasswordChangeRequest request
+    ) {
+        return ResponseEntity.ok(accountSecurityService.changePassword(authentication, request));
     }
 
     private AppUser findUserOrThrow(String username) {

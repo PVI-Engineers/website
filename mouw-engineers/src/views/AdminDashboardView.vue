@@ -1,8 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import PortalShell from '../components/PortalShell.vue'
 import {
-  clearSession,
   downloadApplicationFile,
   downloadResume,
   fetchAdminEmployees,
@@ -17,7 +16,7 @@ import {
   saveAdminProject,
 } from '../services/portalApi'
 
-const router = useRouter()
+const downloadLoadingKey = ref('')
 const loading = ref(true)
 const errorMessage = ref('')
 const adminUser = ref(getStoredUser())
@@ -28,7 +27,12 @@ const employees = ref([])
 const projects = ref([])
 const timesheets = ref([])
 const adminTab = ref('operations')
-const downloadLoadingKey = ref('')
+const adminNav = [
+  { id: 'operations', label: 'Overview', icon: 'mdi-view-dashboard-outline' },
+  { id: 'employees', label: 'Employees', icon: 'mdi-account-group-outline' },
+  { id: 'projects', label: 'Projects', icon: 'mdi-folder-outline' },
+  { id: 'timesheets', label: 'Timesheets', icon: 'mdi-clock-check-outline' },
+]
 const employeeSaving = ref(false)
 const projectSaving = ref(false)
 const reviewSaving = ref(false)
@@ -137,11 +141,6 @@ async function onDownloadFile(application, file) {
   } finally {
     downloadLoadingKey.value = ''
   }
-}
-
-function logout() {
-  clearSession()
-  router.replace('/portal/login')
 }
 
 function statusColor(status) {
@@ -279,6 +278,7 @@ onMounted(loadDashboard)
 </script>
 
 <template>
+  <PortalShell v-model:section="adminTab" eyebrow="Admin Portal" :items="adminNav">
   <v-container class="page-shell">
     <section class="d-flex justify-space-between align-start flex-wrap ga-4">
       <div>
@@ -291,7 +291,6 @@ onMounted(loadDashboard)
       <div class="d-flex ga-2 flex-wrap">
         <v-btn color="primary" variant="tonal" @click="loadDashboard">Refresh</v-btn>
         <v-btn color="secondary" variant="tonal" to="/portal/hr">Open HR Dashboard</v-btn>
-        <v-btn color="error" variant="text" @click="logout">Logout</v-btn>
       </div>
     </section>
 
@@ -341,13 +340,6 @@ onMounted(loadDashboard)
     </v-card>
 
     <template v-else>
-      <v-tabs v-model="adminTab" class="mt-6" color="primary" show-arrows>
-        <v-tab value="operations">Operations</v-tab>
-        <v-tab value="employees">Employees</v-tab>
-        <v-tab value="projects">Projects</v-tab>
-        <v-tab value="timesheets">Timesheets</v-tab>
-      </v-tabs>
-
       <v-window v-model="adminTab">
         <v-window-item value="operations">
       <v-card class="glass-card pa-6 mt-6">
@@ -614,6 +606,7 @@ onMounted(loadDashboard)
       </v-dialog>
     </template>
   </v-container>
+  </PortalShell>
 </template>
 
 <style scoped>

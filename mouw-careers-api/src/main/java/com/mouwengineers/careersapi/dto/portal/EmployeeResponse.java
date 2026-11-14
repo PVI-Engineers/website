@@ -10,6 +10,7 @@ public record EmployeeResponse(
         String username,
         String designation,
         String department,
+        String phone,
         List<ProjectResponse> projects
 ) {
 }

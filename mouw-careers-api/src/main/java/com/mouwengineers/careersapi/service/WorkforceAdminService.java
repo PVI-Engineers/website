@@ -245,6 +245,7 @@ public class WorkforceAdminService {
                 employee.getUsername(),
                 employee.getDesignation(),
                 employee.getDepartment(),
+                employee.getPhone(),
                 projects
         );
     }

@@ -1,6 +1,8 @@
 package com.mouwengineering.careersapi.controller;
 
 import com.mouwengineering.careersapi.dto.portal.EmployeeDashboardResponse;
+import com.mouwengineering.careersapi.dto.portal.EmployeeResponse;
+import com.mouwengineering.careersapi.dto.portal.ProfileUpdateRequest;
 import com.mouwengineering.careersapi.dto.portal.TimesheetResponse;
 import com.mouwengineering.careersapi.dto.portal.TimesheetSubmitRequest;
 import com.mouwengineering.careersapi.service.EmployeePortalService;
@@ -10,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -36,6 +39,14 @@ public class EmployeePortalController {
     @GetMapping("/dashboard")
     public EmployeeDashboardResponse dashboard(Authentication authentication) {
         return employeePortalService.dashboard(authentication);
+    }
+
+    @PutMapping("/profile")
+    public EmployeeResponse updateProfile(
+            Authentication authentication,
+            @Valid @RequestBody ProfileUpdateRequest request
+    ) {
+        return employeePortalService.updateProfile(authentication, request);
     }
 
     @PostMapping("/timesheets")

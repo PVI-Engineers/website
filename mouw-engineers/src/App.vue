@@ -10,6 +10,7 @@ const route = useRoute()
 const theme = useTheme()
 
 const activePath = computed(() => route.path)
+const isAuthenticatedPortal = computed(() => route.meta?.requiresAuth === true)
 const desktopRows = [serviceButtons, companyButtons]
 const desktopLabels = ['Service Domains', 'Company Sections']
 const year = new Date().getFullYear()
@@ -63,13 +64,14 @@ onMounted(() => {
 
 <template>
   <v-app class="mouw-app">
-    <div class="ambient-lights" aria-hidden="true">
+    <div v-if="!isAuthenticatedPortal" class="ambient-lights" aria-hidden="true">
       <span class="light-orb orb-one"></span>
       <span class="light-orb orb-two"></span>
       <span class="light-orb orb-three"></span>
     </div>
 
     <v-navigation-drawer
+      v-if="!isAuthenticatedPortal"
       v-model="drawer"
       class="mobile-drawer d-lg-none"
       location="right"
@@ -154,7 +156,7 @@ onMounted(() => {
       </v-list>
     </v-navigation-drawer>
 
-    <v-app-bar class="top-bar" flat height="110">
+    <v-app-bar v-if="!isAuthenticatedPortal" class="top-bar" flat height="110">
       <v-container class="top-inner">
         <router-link class="brand-link" to="/">
           <span class="brand-mark">MOUW</span>
@@ -275,11 +277,11 @@ onMounted(() => {
       </v-container>
     </v-app-bar>
 
-    <v-main>
+    <v-main :class="{ 'portal-main': isAuthenticatedPortal }">
       <router-view />
     </v-main>
 
-    <v-footer class="site-footer">
+    <v-footer v-if="!isAuthenticatedPortal" class="site-footer">
       <v-container class="py-8">
         <v-row>
           <v-col cols="12" md="4">
@@ -335,6 +337,14 @@ onMounted(() => {
 <style scoped>
 .mouw-app {
   background: transparent;
+}
+
+.portal-main {
+  padding: 0 !important;
+  --v-layout-top: 0px;
+  --v-layout-bottom: 0px;
+  --v-layout-left: 0px;
+  --v-layout-right: 0px;
 }
 
 .ambient-lights {
