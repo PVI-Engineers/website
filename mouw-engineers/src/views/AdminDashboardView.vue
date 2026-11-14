@@ -76,6 +76,23 @@ function formatDateTime(value) {
   return new Date(value).toLocaleString()
 }
 
+function formatClock(minutes) {
+  const value = Number(minutes)
+  const normalized = value === 1440 ? 0 : value
+  const hour = Math.floor(normalized / 60)
+  const mins = normalized % 60
+  const suffix = hour >= 12 ? 'PM' : 'AM'
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12
+  return `${hour12}:${String(mins).padStart(2, '0')} ${suffix}`
+}
+
+function formatShift(entry) {
+  if (!entry || entry.startMinute == null || entry.endMinute == null) {
+    return `${Number(entry?.hours || 0).toFixed(2)} hrs`
+  }
+  return `${formatClock(entry.startMinute)} – ${formatClock(entry.endMinute)} (${Number(entry.hours).toFixed(2)} hrs)`
+}
+
 async function loadDashboard() {
   loading.value = true
   errorMessage.value = ''
@@ -280,6 +297,21 @@ onMounted(loadDashboard)
 <template>
   <PortalShell v-model:section="adminTab" eyebrow="Admin Portal" :items="adminNav">
   <v-container class="page-shell">
+    <v-alert v-if="errorMessage" class="mt-2" type="error" variant="tonal" border="start">
+      {{ errorMessage }}
+    </v-alert>
+    <v-alert v-if="notice" class="mt-2" type="success" variant="tonal" border="start">
+      {{ notice }}
+    </v-alert>
+
+    <v-card v-if="loading" class="glass-card pa-8 mt-6 text-center">
+      <v-progress-circular color="primary" indeterminate />
+      <p class="page-copy mt-4">Loading admin dashboard...</p>
+    </v-card>
+
+    <template v-else>
+      <v-window v-model="adminTab">
+        <v-window-item value="operations">
     <section class="d-flex justify-space-between align-start flex-wrap ga-4">
       <div>
         <p class="section-kicker">Admin Dashboard</p>
@@ -293,13 +325,6 @@ onMounted(loadDashboard)
         <v-btn color="secondary" variant="tonal" to="/portal/hr">Open HR Dashboard</v-btn>
       </div>
     </section>
-
-    <v-alert v-if="errorMessage" class="mt-6" type="error" variant="tonal" border="start">
-      {{ errorMessage }}
-    </v-alert>
-    <v-alert v-if="notice" class="mt-6" type="success" variant="tonal" border="start">
-      {{ notice }}
-    </v-alert>
 
     <v-row class="mt-2" dense>
       <v-col cols="12" md="3">
@@ -334,14 +359,6 @@ onMounted(loadDashboard)
       </v-col>
     </v-row>
 
-    <v-card v-if="loading" class="glass-card pa-8 mt-6 text-center">
-      <v-progress-circular color="primary" indeterminate />
-      <p class="page-copy mt-4">Loading admin dashboard...</p>
-    </v-card>
-
-    <template v-else>
-      <v-window v-model="adminTab">
-        <v-window-item value="operations">
       <v-card class="glass-card pa-6 mt-6">
         <p class="mini-kicker mb-3">Portal Users</p>
         <v-table class="transparent-table">
@@ -556,7 +573,7 @@ onMounted(loadDashboard)
                     <th>Employee</th>
                     <th>Project</th>
                     <th>Date</th>
-                    <th>Hours</th>
+                    <th>Time worked</th>
                     <th>Work status</th>
                     <th>Review</th>
                   </tr>
@@ -566,7 +583,7 @@ onMounted(loadDashboard)
                     <td>{{ entry.employeeName }}<br /><span class="meta-label">{{ entry.employeeCode || '-' }}</span></td>
                     <td>{{ entry.projectName }}</td>
                     <td>{{ entry.workDate }}</td>
-                    <td>{{ Number(entry.hours).toFixed(2) }}</td>
+                    <td>{{ formatShift(entry) }}</td>
                     <td class="message-cell">{{ entry.workDescription }}</td>
                     <td>
                       <v-chip :color="statusColor(entry.status)" size="small" variant="tonal">{{ entry.status }}</v-chip>
@@ -590,12 +607,18 @@ onMounted(loadDashboard)
         </v-window-item>
       </v-window>
 
-      <v-dialog v-model="reviewDialog" max-width="520">
+      <v-dialog v-model="reviewDialog" max-width="640">
         <v-card class="glass-card pa-6">
           <p class="mini-kicker">Review timesheet</p>
           <p class="page-copy">
             {{ reviewTarget?.employeeName }} · {{ reviewTarget?.projectName }} · {{ reviewTarget?.workDate }}
           </p>
+          <div class="work-details mt-4">
+            <p class="meta-label">Time worked</p>
+            <p class="meta-value">{{ formatShift(reviewTarget) }}</p>
+            <p class="meta-label mt-3">Work details</p>
+            <p class="work-copy">{{ reviewTarget?.workDescription || 'No work description was submitted.' }}</p>
+          </div>
           <v-textarea v-model="reviewNote" class="mt-4" label="Review note" rows="3" />
           <div class="d-flex ga-2 flex-wrap">
             <v-btn :loading="reviewSaving" color="success" @click="onReview('APPROVED')">Approve</v-btn>
@@ -669,6 +692,26 @@ onMounted(loadDashboard)
 .meta-label {
   color: var(--text-kicker);
   font-size: 0.75rem;
+}
+
+.meta-value {
+  margin: 4px 0 0;
+  color: var(--text-card-title);
+  font-weight: 700;
+}
+
+.work-details {
+  padding: 14px 16px;
+  border: 1px solid var(--surface-card-border);
+  border-radius: 16px;
+  background: transparent;
+}
+
+.work-copy {
+  margin: 6px 0 0;
+  color: var(--text-card-copy);
+  line-height: 1.6;
+  white-space: pre-line;
 }
 
 .message-cell {

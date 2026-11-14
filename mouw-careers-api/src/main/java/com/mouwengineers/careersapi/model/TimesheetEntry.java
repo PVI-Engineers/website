@@ -35,6 +35,10 @@ public class TimesheetEntry {
     @Column(nullable = false)
     private LocalDate workDate;
 
+    private Integer startMinute;
+
+    private Integer endMinute;
+
     @Column(nullable = false, precision = 4, scale = 2)
     private BigDecimal hours;
 
@@ -93,6 +97,22 @@ public class TimesheetEntry {
 
     public void setWorkDate(LocalDate workDate) {
         this.workDate = workDate;
+    }
+
+    public Integer getStartMinute() {
+        return startMinute;
+    }
+
+    public void setStartMinute(Integer startMinute) {
+        this.startMinute = startMinute;
+    }
+
+    public Integer getEndMinute() {
+        return endMinute;
+    }
+
+    public void setEndMinute(Integer endMinute) {
+        this.endMinute = endMinute;
     }
 
     public BigDecimal getHours() {

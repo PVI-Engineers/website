@@ -27,10 +27,12 @@ public interface TimesheetEntryRepository extends JpaRepository<TimesheetEntry, 
             """)
     List<TimesheetEntry> findAllDetailed();
 
-    boolean existsByEmployeeIdAndProjectIdAndWorkDateAndStatusNot(
-            Long employeeId,
-            Long projectId,
-            LocalDate workDate,
-            TimesheetStatus status
-    );
+    @Query("""
+            select entry
+            from TimesheetEntry entry
+            where entry.employee.id = :employeeId
+              and entry.workDate = :workDate
+              and entry.status <> :status
+            """)
+    List<TimesheetEntry> findActiveForEmployeeOnDate(Long employeeId, LocalDate workDate, TimesheetStatus status);
 }

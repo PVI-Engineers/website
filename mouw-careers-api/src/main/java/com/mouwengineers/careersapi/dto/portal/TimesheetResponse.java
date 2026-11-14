@@ -13,6 +13,8 @@ public record TimesheetResponse(
         String projectName,
         String projectCode,
         LocalDate workDate,
+        Integer startMinute,
+        Integer endMinute,
         BigDecimal hours,
         String workDescription,
         String status,

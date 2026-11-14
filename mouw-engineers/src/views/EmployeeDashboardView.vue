@@ -33,14 +33,60 @@ const timesheets = computed(() => dashboard.value?.timesheets || [])
 const summary = computed(() => dashboard.value?.summary || {})
 const profile = computed(() => dashboard.value?.profile || {})
 const today = new Date().toISOString().slice(0, 10)
+const startOptions = Array.from({ length: 48 }, (_, index) => {
+  const value = index * 30
+  return { title: formatClock(value), value }
+})
+const endOptions = [...startOptions.slice(1), { title: '12:00 AM', value: 1440 }]
+
+const bookedEntries = computed(() =>
+  timesheets.value.filter(
+    (entry) => entry.workDate === form.value.workDate && entry.status !== 'REJECTED',
+  ),
+)
+const bookedHours = computed(() =>
+  bookedEntries.value.reduce((sum, entry) => sum + Number(entry.hours || 0), 0),
+)
+const selectedHours = computed(() => {
+  const [start, end] = form.value.timeRange
+  return Math.max(0, (end - start) / 60)
+})
+const remainingHours = computed(() => Math.max(0, 12 - bookedHours.value))
+const selectionOverlaps = computed(() => {
+  const [start, end] = form.value.timeRange
+  return bookedEntries.value.some(
+    (entry) =>
+      entry.startMinute != null &&
+      entry.endMinute != null &&
+      start < entry.endMinute &&
+      entry.startMinute < end,
+  )
+})
 
 function emptyForm() {
   return {
     projectId: null,
     workDate: new Date().toISOString().slice(0, 10),
-    hours: '',
+    timeRange: [540, 660],
     workDescription: '',
   }
+}
+
+function formatClock(minutes) {
+  const value = Number(minutes)
+  const normalized = value === 1440 ? 0 : value
+  const hour = Math.floor(normalized / 60)
+  const mins = normalized % 60
+  const suffix = hour >= 12 ? 'PM' : 'AM'
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12
+  return `${hour12}:${String(mins).padStart(2, '0')} ${suffix}`
+}
+
+function formatShift(entry) {
+  if (entry?.startMinute == null || entry?.endMinute == null) {
+    return hoursLabel(entry?.hours)
+  }
+  return `${formatClock(entry.startMinute)} – ${formatClock(entry.endMinute)} (${hoursLabel(entry.hours)})`
 }
 
 function display(value) {
@@ -59,9 +105,27 @@ function formatDateTime(value) {
   return new Date(value).toLocaleString()
 }
 
+function setStart(value) {
+  const end = form.value.timeRange[1] <= value ? Math.min(1440, value + 120) : form.value.timeRange[1]
+  form.value.timeRange = [value, end]
+}
+
+function setEnd(value) {
+  const start = value <= form.value.timeRange[0] ? Math.max(0, value - 120) : form.value.timeRange[0]
+  form.value.timeRange = [start, value]
+}
+
 function hoursLabel(value) {
   const amount = Number(value || 0)
   return `${amount.toFixed(2)} hrs`
+}
+
+function trackStyle(start, end) {
+  if (start == null || end == null || end <= start) return { display: 'none' }
+  return {
+    left: `${(start / 1440) * 100}%`,
+    width: `${((end - start) / 1440) * 100}%`,
+  }
 }
 
 function statusColor(status) {
@@ -89,7 +153,7 @@ async function loadDashboard() {
 async function onSubmit() {
   successMessage.value = ''
   errorMessage.value = ''
-  const hours = Number(form.value.hours)
+  const [startMinute, endMinute] = form.value.timeRange
   if (!form.value.projectId) {
     errorMessage.value = 'Select one of your assigned projects.'
     return
@@ -98,8 +162,16 @@ async function onSubmit() {
     errorMessage.value = 'Choose today or an earlier work date.'
     return
   }
-  if (!Number.isFinite(hours) || hours < 0.25 || hours > 24) {
-    errorMessage.value = 'Enter hours between 0.25 and 24.'
+  if (endMinute <= startMinute) {
+    errorMessage.value = 'End time must be later than the start time.'
+    return
+  }
+  if (selectionOverlaps.value) {
+    errorMessage.value = 'That time is already used on this day. Choose a different range.'
+    return
+  }
+  if (bookedHours.value + selectedHours.value > 12) {
+    errorMessage.value = 'A day cannot exceed 12 working hours.'
     return
   }
   if (form.value.workDescription.trim().length < 10) {
@@ -112,7 +184,8 @@ async function onSubmit() {
     await submitEmployeeTimesheet({
       projectId: form.value.projectId,
       workDate: form.value.workDate,
-      hours,
+      startMinute,
+      endMinute,
       workDescription: form.value.workDescription.trim(),
     })
     successMessage.value = 'Timesheet submitted for review.'
@@ -304,7 +377,70 @@ onMounted(loadDashboard)
             no-data-text="No assigned projects"
           />
           <v-text-field v-model="form.workDate" class="mb-3" label="Work date" type="date" :max="today" />
-          <v-text-field v-model="form.hours" class="mb-3" label="Hours worked" type="number" min="0.25" max="24" step="0.25" />
+          <v-row dense>
+            <v-col cols="12" sm="6">
+              <v-select
+                :model-value="form.timeRange[0]"
+                :items="startOptions"
+                item-title="title"
+                item-value="value"
+                label="Start time"
+                @update:model-value="setStart"
+              />
+            </v-col>
+            <v-col cols="12" sm="6">
+              <v-select
+                :model-value="form.timeRange[1]"
+                :items="endOptions.filter((option) => option.value > form.timeRange[0])"
+                item-title="title"
+                item-value="value"
+                label="End time"
+                @update:model-value="setEnd"
+              />
+            </v-col>
+          </v-row>
+          <div class="time-slider">
+            <v-range-slider
+              v-model="form.timeRange"
+              color="primary"
+              :max="1440"
+              :min="0"
+              :step="30"
+              thumb-label="always"
+              hide-details
+            >
+              <template #thumb-label="{ modelValue }">
+                {{ formatClock(modelValue) }}
+              </template>
+            </v-range-slider>
+            <div class="day-scale">
+              <span>12 AM</span>
+              <span>6 AM</span>
+              <span>12 PM</span>
+              <span>6 PM</span>
+              <span>12 AM</span>
+            </div>
+            <div class="day-track" aria-hidden="true">
+              <span
+                v-for="entry in bookedEntries"
+                :key="`booked-${entry.id}`"
+                class="track-block booked"
+                :style="trackStyle(entry.startMinute, entry.endMinute)"
+              />
+              <span class="track-block selected" :style="trackStyle(form.timeRange[0], form.timeRange[1])" />
+            </div>
+          </div>
+          <p class="page-copy">
+            Selected {{ formatClock(form.timeRange[0]) }} – {{ formatClock(form.timeRange[1]) }}
+            ({{ selectedHours.toFixed(2) }} hrs). {{ remainingHours.toFixed(2) }} hours still available on this day. Daily maximum is 12 hours.
+          </p>
+          <p v-if="bookedEntries.length" class="page-copy">
+            Already used:
+            <span v-for="entry in bookedEntries" :key="`used-${entry.id}`">
+              {{ formatShift(entry) }}{{ entry.projectName ? ` on ${entry.projectName}` : '' }}.
+            </span>
+          </p>
+          <p v-if="selectionOverlaps" class="page-copy overlap-note">This range overlaps time already submitted for the selected day.</p>
           <v-textarea
             v-model="form.workDescription"
             class="mb-4"
@@ -313,7 +449,7 @@ onMounted(loadDashboard)
             counter="2000"
             placeholder="Describe the tasks completed on this project."
           />
-          <v-btn :loading="saving" color="primary" type="submit" :disabled="projects.length === 0">Submit timesheet</v-btn>
+          <v-btn :loading="saving" color="primary" type="submit" :disabled="projects.length === 0 || selectionOverlaps">Submit timesheet</v-btn>
         </v-form>
       </v-card>
 
@@ -326,7 +462,7 @@ onMounted(loadDashboard)
               <tr>
                 <th>Date</th>
                 <th>Project</th>
-                <th>Hours</th>
+                <th>Time worked</th>
                 <th>Work status</th>
                 <th>Review</th>
               </tr>
@@ -335,7 +471,7 @@ onMounted(loadDashboard)
               <tr v-for="entry in timesheets" :key="entry.id">
                 <td>{{ formatDate(entry.workDate) }}</td>
                 <td>{{ entry.projectName }}<br /><span class="meta-label">{{ entry.projectCode }}</span></td>
-                <td>{{ hoursLabel(entry.hours) }}</td>
+                <td>{{ formatShift(entry) }}</td>
                 <td class="message-cell">{{ entry.workDescription }}</td>
                 <td>
                   <v-chip :color="statusColor(entry.status)" size="small" variant="tonal">{{ entry.status }}</v-chip>
@@ -434,5 +570,44 @@ onMounted(loadDashboard)
 .message-cell {
   max-width: 320px;
   white-space: pre-line;
+}
+
+.time-slider {
+  margin: 8px 8px 18px;
+}
+
+.day-scale {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-kicker);
+  font-size: 0.72rem;
+}
+
+.day-track {
+  position: relative;
+  height: 14px;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: rgba(31, 136, 229, 0.12);
+  overflow: hidden;
+}
+
+.track-block {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.track-block.booked {
+  background: #df5f70;
+}
+
+.track-block.selected {
+  background: #1f88e5;
+  opacity: 0.8;
+}
+
+.overlap-note {
+  color: #df5f70;
 }
 </style>

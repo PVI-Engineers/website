@@ -260,6 +260,8 @@ public class WorkforceAdminService {
                 entry.getProject().getName(),
                 entry.getProject().getCode(),
                 entry.getWorkDate(),
+                entry.getStartMinute(),
+                entry.getEndMinute(),
                 entry.getHours(),
                 entry.getWorkDescription(),
                 entry.getStatus().name(),

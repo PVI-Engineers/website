@@ -15,6 +15,7 @@ import com.mouwengineering.careersapi.model.TimesheetStatus;
 import com.mouwengineering.careersapi.repository.AppUserRepository;
 import com.mouwengineering.careersapi.repository.TimesheetEntryRepository;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
@@ -69,23 +70,40 @@ public class EmployeePortalService {
         if (!project.isActive()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "That project is no longer active.");
         }
-        if (timesheetEntryRepository.existsByEmployeeIdAndProjectIdAndWorkDateAndStatusNot(
+
+        int start = request.startMinute();
+        int end = request.endMinute();
+        if (start % 30 != 0 || end % 30 != 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Choose times in 30-minute steps.");
+        }
+        if (end <= start) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End time must be later than the start time.");
+        }
+
+        BigDecimal requestedHours = hoursBetween(start, end);
+        List<TimesheetEntry> sameDay = timesheetEntryRepository.findActiveForEmployeeOnDate(
                 employee.getId(),
-                project.getId(),
                 request.workDate(),
                 TimesheetStatus.REJECTED
-        )) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "A timesheet for this project and date is already submitted."
-            );
+        );
+        BigDecimal alreadyBooked = sameDay.stream()
+                .map(TimesheetEntry::getHours)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (alreadyBooked.add(requestedHours).compareTo(new BigDecimal("12.00")) > 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A day cannot exceed 12 working hours.");
+        }
+        boolean overlaps = sameDay.stream().anyMatch(entry -> overlaps(start, end, entry.getStartMinute(), entry.getEndMinute()));
+        if (overlaps) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "That time is already used on this day. Choose a different range.");
         }
 
         TimesheetEntry entry = new TimesheetEntry();
         entry.setEmployee(employee);
         entry.setProject(project);
         entry.setWorkDate(request.workDate());
-        entry.setHours(request.hours());
+        entry.setStartMinute(start);
+        entry.setEndMinute(end);
+        entry.setHours(requestedHours);
         entry.setWorkDescription(request.workDescription().trim());
         entry.setStatus(TimesheetStatus.SUBMITTED);
         return toTimesheet(timesheetEntryRepository.save(entry));
@@ -152,10 +170,38 @@ public class EmployeePortalService {
     private String activityMessage(TimesheetEntry entry) {
         String project = entry.getProject().getName();
         return switch (entry.getStatus()) {
-            case APPROVED -> "Approved " + entry.getHours() + " hours on " + project + ".";
-            case REJECTED -> "Rejected " + entry.getHours() + " hours on " + project + ".";
-            case SUBMITTED -> "Submitted " + entry.getHours() + " hours on " + project + ".";
+            case APPROVED -> "Approved " + shiftLabel(entry) + " on " + project + ".";
+            case REJECTED -> "Rejected " + shiftLabel(entry) + " on " + project + ".";
+            case SUBMITTED -> "Submitted " + shiftLabel(entry) + " on " + project + ".";
         };
+    }
+
+    private BigDecimal hoursBetween(int startMinute, int endMinute) {
+        return BigDecimal.valueOf(endMinute - startMinute)
+                .divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
+    }
+
+    private boolean overlaps(int start, int end, Integer existingStart, Integer existingEnd) {
+        if (existingStart == null || existingEnd == null) {
+            return false;
+        }
+        return start < existingEnd && existingStart < end;
+    }
+
+    private String shiftLabel(TimesheetEntry entry) {
+        if (entry.getStartMinute() == null || entry.getEndMinute() == null) {
+            return entry.getHours() + " hours";
+        }
+        return clockLabel(entry.getStartMinute()) + " – " + clockLabel(entry.getEndMinute());
+    }
+
+    private String clockLabel(int minute) {
+        int normalized = minute == 1440 ? 0 : minute;
+        int hour = normalized / 60;
+        int mins = normalized % 60;
+        String suffix = hour >= 12 ? "PM" : "AM";
+        int hour12 = hour % 12 == 0 ? 12 : hour % 12;
+        return hour12 + ":" + String.format("%02d", mins) + " " + suffix;
     }
 
     private EmployeeResponse toEmployee(AppUser employee, List<ProjectResponse> projects) {
@@ -192,6 +238,8 @@ public class EmployeePortalService {
                 entry.getProject().getName(),
                 entry.getProject().getCode(),
                 entry.getWorkDate(),
+                entry.getStartMinute(),
+                entry.getEndMinute(),
                 entry.getHours(),
                 entry.getWorkDescription(),
                 entry.getStatus().name(),

@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useTheme } from 'vuetify'
 import { clearSession, getStoredUser } from '../services/portalApi'
 
 const props = defineProps({
@@ -20,8 +21,12 @@ const props = defineProps({
 
 const emit = defineEmits(['update:section'])
 const router = useRouter()
+const theme = useTheme()
 const mobileNav = ref(false)
 const currentUser = computed(() => getStoredUser())
+const isDarkTheme = computed(() => theme.global.name.value === 'mouwDark')
+const themeToggleIcon = computed(() => (isDarkTheme.value ? 'mdi-white-balance-sunny' : 'mdi-weather-night'))
+const themeToggleLabel = computed(() => (isDarkTheme.value ? 'Switch to light theme' : 'Switch to dark theme'))
 
 const activeLabel = computed(() => {
   const match = props.items.find((item) => item.id === props.section)
@@ -42,6 +47,19 @@ const initials = computed(() => {
 function choose(id) {
   emit('update:section', id)
   mobileNav.value = false
+}
+
+function applyTheme(themeName) {
+  const selected = themeName === 'mouwDark' ? 'mouwDark' : 'mouwLight'
+  const mode = selected === 'mouwDark' ? 'dark' : 'light'
+  theme.global.name.value = selected
+  document.body.setAttribute('data-site-theme', mode)
+  document.documentElement.style.colorScheme = mode
+  window.localStorage.setItem('mouw-theme', selected)
+}
+
+function toggleTheme() {
+  applyTheme(isDarkTheme.value ? 'mouwLight' : 'mouwDark')
 }
 
 function logout() {
@@ -75,24 +93,42 @@ function logout() {
         </button>
       </nav>
 
-      <div class="portal-user">
-        <span class="portal-avatar">{{ initials }}</span>
-        <div>
-          <strong>{{ currentUser?.fullName || currentUser?.username }}</strong>
-          <small>{{ currentUser?.email || currentUser?.username }}</small>
+      <div class="portal-side-footer">
+        <div class="portal-user">
+          <span class="portal-avatar">{{ initials }}</span>
+          <div>
+            <strong>{{ currentUser?.fullName || currentUser?.username }}</strong>
+            <small>{{ currentUser?.email || currentUser?.username }}</small>
+          </div>
         </div>
+        <button type="button" class="portal-logout" @click="logout">
+          <v-icon icon="mdi-logout" size="18" />
+          <span>Logout</span>
+        </button>
       </div>
-      <v-btn block color="primary" variant="tonal" @click="logout">Logout</v-btn>
     </aside>
 
     <section class="portal-workspace">
       <header class="portal-top">
         <v-btn class="d-md-none" icon="mdi-menu" variant="text" aria-label="Open portal menu" @click="mobileNav = true" />
-        <div>
+        <div class="portal-heading">
           <p class="portal-eyebrow">{{ eyebrow }}</p>
           <h1>{{ activeLabel }}</h1>
         </div>
-        <v-btn color="error" variant="text" @click="logout">Logout</v-btn>
+        <div class="portal-actions">
+          <v-btn
+            :icon="themeToggleIcon"
+            :title="themeToggleLabel"
+            :aria-label="themeToggleLabel"
+            class="theme-toggle-btn"
+            variant="tonal"
+            @click="toggleTheme"
+          />
+          <button type="button" class="portal-logout" @click="logout">
+            <v-icon icon="mdi-logout" size="18" />
+            <span>Logout</span>
+          </button>
+        </div>
       </header>
       <div class="portal-content">
         <slot />
@@ -113,7 +149,10 @@ function logout() {
           <v-icon :icon="item.icon" size="18" />
           <span>{{ item.label }}</span>
         </button>
-        <v-btn block class="mt-4" color="primary" variant="tonal" @click="logout">Logout</v-btn>
+        <button type="button" class="portal-logout mt-4" @click="logout">
+          <v-icon icon="mdi-logout" size="18" />
+          <span>Logout</span>
+        </button>
       </div>
     </v-navigation-drawer>
   </div>
@@ -162,8 +201,37 @@ function logout() {
   text-transform: uppercase;
 }
 
-.portal-top .v-btn:last-child {
+.portal-top .portal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-left: auto;
+}
+
+.theme-toggle-btn {
+  border: 1px solid var(--top-bar-border);
+}
+
+.portal-logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid rgba(223, 95, 112, 0.35);
+  border-radius: 999px;
+  background: transparent;
+  color: #df5f70;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.portal-side .portal-logout {
+  width: 100%;
 }
 
 .portal-content {
@@ -229,13 +297,16 @@ function logout() {
   font-weight: 700;
 }
 
+.portal-side-footer {
+  margin-top: auto;
+  padding-top: 16px;
+}
+
 .portal-user {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: auto;
   margin-bottom: 12px;
-  padding-top: 16px;
 }
 
 .portal-avatar {
