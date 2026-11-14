@@ -5,10 +5,16 @@ import {
   clearSession,
   downloadApplicationFile,
   downloadResume,
+  fetchAdminEmployees,
+  fetchAdminProjects,
+  fetchAdminTimesheets,
   fetchAdminUsers,
   fetchHrApplications,
   fetchHrContactInquiries,
   getStoredUser,
+  reviewAdminTimesheet,
+  saveAdminEmployee,
+  saveAdminProject,
 } from '../services/portalApi'
 
 const router = useRouter()
@@ -18,11 +24,48 @@ const adminUser = ref(getStoredUser())
 const users = ref([])
 const applications = ref([])
 const contactInquiries = ref([])
+const employees = ref([])
+const projects = ref([])
+const timesheets = ref([])
+const adminTab = ref('operations')
 const downloadLoadingKey = ref('')
+const employeeSaving = ref(false)
+const projectSaving = ref(false)
+const reviewSaving = ref(false)
+const notice = ref('')
+const employeeForm = ref(emptyEmployeeForm())
+const projectForm = ref(emptyProjectForm())
+const reviewDialog = ref(false)
+const reviewTarget = ref(null)
+const reviewNote = ref('')
 
 const userCount = computed(() => users.value.length)
 const applicationCount = computed(() => applications.value.length)
 const contactInquiryCount = computed(() => contactInquiries.value.length)
+const pendingTimesheets = computed(() => timesheets.value.filter((entry) => entry.status === 'SUBMITTED').length)
+
+function emptyEmployeeForm() {
+  return {
+    id: null,
+    fullName: '',
+    employeeCode: '',
+    email: '',
+    designation: '',
+    department: '',
+    password: '',
+    projectIds: [],
+  }
+}
+
+function emptyProjectForm() {
+  return {
+    id: null,
+    name: '',
+    code: '',
+    description: '',
+    active: true,
+  }
+}
 
 function formatDateTime(value) {
   if (!value) return '-'
@@ -34,14 +77,20 @@ async function loadDashboard() {
   errorMessage.value = ''
 
   try {
-    const [internalUsers, hrApplications, hrContactInquiries] = await Promise.all([
+    const [internalUsers, hrApplications, hrContactInquiries, workforce, projectList, timesheetList] = await Promise.all([
       fetchAdminUsers(),
       fetchHrApplications(),
       fetchHrContactInquiries(),
+      fetchAdminEmployees(),
+      fetchAdminProjects(),
+      fetchAdminTimesheets(),
     ])
     users.value = internalUsers
     applications.value = hrApplications
     contactInquiries.value = hrContactInquiries
+    employees.value = workforce
+    projects.value = projectList
+    timesheets.value = timesheetList
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : 'Failed to load admin dashboard.'
   } finally {
@@ -95,6 +144,137 @@ function logout() {
   router.replace('/portal/login')
 }
 
+function statusColor(status) {
+  if (status === 'APPROVED') return 'success'
+  if (status === 'REJECTED') return 'error'
+  return 'warning'
+}
+
+function projectNames(employee) {
+  return (employee.projects || []).map((project) => project.name).join(', ') || '-'
+}
+
+function editEmployee(employee) {
+  employeeForm.value = {
+    id: employee.id,
+    fullName: employee.fullName || '',
+    employeeCode: employee.employeeCode || '',
+    email: employee.email || '',
+    designation: employee.designation || '',
+    department: employee.department || '',
+    password: '',
+    projectIds: (employee.projects || []).map((project) => project.id),
+  }
+  adminTab.value = 'employees'
+}
+
+function resetEmployeeForm() {
+  employeeForm.value = emptyEmployeeForm()
+}
+
+function editProject(project) {
+  projectForm.value = {
+    id: project.id,
+    name: project.name,
+    code: project.code,
+    description: project.description || '',
+    active: project.active,
+  }
+  adminTab.value = 'projects'
+}
+
+function resetProjectForm() {
+  projectForm.value = emptyProjectForm()
+}
+
+async function onSaveEmployee() {
+  notice.value = ''
+  errorMessage.value = ''
+  if (!employeeForm.value.projectIds.length) {
+    errorMessage.value = 'Assign at least one project before saving the employee.'
+    return
+  }
+  if (!employeeForm.value.id && employeeForm.value.password.trim().length < 8) {
+    errorMessage.value = 'A new employee password must be at least 8 characters.'
+    return
+  }
+  employeeSaving.value = true
+  try {
+    await saveAdminEmployee(
+      {
+        fullName: employeeForm.value.fullName.trim(),
+        employeeCode: employeeForm.value.employeeCode.trim(),
+        email: employeeForm.value.email.trim(),
+        designation: employeeForm.value.designation.trim(),
+        department: employeeForm.value.department.trim(),
+        password: employeeForm.value.password,
+        projectIds: employeeForm.value.projectIds,
+      },
+      employeeForm.value.id,
+    )
+    notice.value = employeeForm.value.id ? 'Employee details updated.' : 'Employee account created.'
+    resetEmployeeForm()
+    await loadDashboard()
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : 'Unable to save the employee.'
+  } finally {
+    employeeSaving.value = false
+  }
+}
+
+async function onSaveProject() {
+  notice.value = ''
+  errorMessage.value = ''
+  projectSaving.value = true
+  try {
+    await saveAdminProject(
+      {
+        name: projectForm.value.name.trim(),
+        code: projectForm.value.code.trim(),
+        description: projectForm.value.description.trim(),
+        active: projectForm.value.active,
+      },
+      projectForm.value.id,
+    )
+    notice.value = projectForm.value.id ? 'Project updated.' : 'Project created.'
+    resetProjectForm()
+    await loadDashboard()
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : 'Unable to save the project.'
+  } finally {
+    projectSaving.value = false
+  }
+}
+
+function openReview(entry) {
+  reviewTarget.value = entry
+  reviewNote.value = ''
+  reviewDialog.value = true
+}
+
+async function onReview(decision) {
+  if (!reviewTarget.value) return
+  if (decision === 'REJECTED' && !reviewNote.value.trim()) {
+    errorMessage.value = 'Add a note when rejecting a timesheet.'
+    return
+  }
+  reviewSaving.value = true
+  errorMessage.value = ''
+  try {
+    await reviewAdminTimesheet(reviewTarget.value.id, {
+      decision,
+      note: reviewNote.value.trim(),
+    })
+    notice.value = decision === 'APPROVED' ? 'Timesheet approved.' : 'Timesheet rejected.'
+    reviewDialog.value = false
+    await loadDashboard()
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : 'Unable to review the timesheet.'
+  } finally {
+    reviewSaving.value = false
+  }
+}
+
 onMounted(loadDashboard)
 </script>
 
@@ -105,7 +285,7 @@ onMounted(loadDashboard)
         <p class="section-kicker">Admin Dashboard</p>
         <h1 class="page-title">Full Access Control Center</h1>
         <p class="page-copy">
-          Admin can manage users, review HR application data, and monitor website contact inquiries.
+          Manage employees and projects, review timesheets, and monitor applications and contact inquiries.
         </p>
       </div>
       <div class="d-flex ga-2 flex-wrap">
@@ -117,6 +297,9 @@ onMounted(loadDashboard)
 
     <v-alert v-if="errorMessage" class="mt-6" type="error" variant="tonal" border="start">
       {{ errorMessage }}
+    </v-alert>
+    <v-alert v-if="notice" class="mt-6" type="success" variant="tonal" border="start">
+      {{ notice }}
     </v-alert>
 
     <v-row class="mt-2" dense>
@@ -144,6 +327,12 @@ onMounted(loadDashboard)
           <p class="metric mt-2">{{ contactInquiryCount }}</p>
         </v-card>
       </v-col>
+      <v-col cols="12" sm="6" md="3">
+        <v-card class="glass-card pa-5">
+          <p class="mini-kicker">Pending Timesheets</p>
+          <p class="metric mt-2">{{ pendingTimesheets }}</p>
+        </v-card>
+      </v-col>
     </v-row>
 
     <v-card v-if="loading" class="glass-card pa-8 mt-6 text-center">
@@ -152,6 +341,15 @@ onMounted(loadDashboard)
     </v-card>
 
     <template v-else>
+      <v-tabs v-model="adminTab" class="mt-6" color="primary" show-arrows>
+        <v-tab value="operations">Operations</v-tab>
+        <v-tab value="employees">Employees</v-tab>
+        <v-tab value="projects">Projects</v-tab>
+        <v-tab value="timesheets">Timesheets</v-tab>
+      </v-tabs>
+
+      <v-window v-model="adminTab">
+        <v-window-item value="operations">
       <v-card class="glass-card pa-6 mt-6">
         <p class="mini-kicker mb-3">Portal Users</p>
         <v-table class="transparent-table">
@@ -238,6 +436,182 @@ onMounted(loadDashboard)
           </tbody>
         </v-table>
       </v-card>
+        </v-window-item>
+
+        <v-window-item value="employees">
+          <v-row class="mt-4" dense>
+            <v-col cols="12" lg="5">
+              <v-card class="glass-card pa-6">
+                <p class="mini-kicker">{{ employeeForm.id ? 'Update employee' : 'Create employee' }}</p>
+                <v-form class="mt-4" @submit.prevent="onSaveEmployee">
+                  <v-text-field v-model="employeeForm.fullName" class="mb-3" label="Full name" />
+                  <v-text-field v-model="employeeForm.employeeCode" class="mb-3" label="Employee ID" />
+                  <v-text-field v-model="employeeForm.email" class="mb-3" label="Email" type="email" />
+                  <v-text-field v-model="employeeForm.designation" class="mb-3" label="Designation" />
+                  <v-text-field v-model="employeeForm.department" class="mb-3" label="Department" />
+                  <v-text-field
+                    v-model="employeeForm.password"
+                    class="mb-3"
+                    :label="employeeForm.id ? 'New password (optional)' : 'Password'"
+                    type="password"
+                  />
+                  <v-select
+                    v-model="employeeForm.projectIds"
+                    class="mb-4"
+                    :items="projects"
+                    item-title="name"
+                    item-value="id"
+                    label="Assigned projects"
+                    multiple
+                    chips
+                    closable-chips
+                  />
+                  <div class="d-flex ga-2 flex-wrap">
+                    <v-btn :loading="employeeSaving" color="primary" type="submit">
+                      {{ employeeForm.id ? 'Update employee' : 'Create employee' }}
+                    </v-btn>
+                    <v-btn v-if="employeeForm.id" variant="text" @click="resetEmployeeForm">Cancel</v-btn>
+                  </div>
+                </v-form>
+              </v-card>
+            </v-col>
+            <v-col cols="12" lg="7">
+              <v-card class="glass-card pa-6">
+                <p class="mini-kicker mb-3">Employee accounts</p>
+                <p v-if="employees.length === 0" class="page-copy">No employee accounts have been created yet.</p>
+                <div v-else class="table-scroll">
+                  <v-table class="transparent-table">
+                    <thead>
+                      <tr>
+                        <th>Employee</th>
+                        <th>Role</th>
+                        <th>Projects</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="employee in employees" :key="employee.id">
+                        <td>
+                          {{ employee.fullName }}<br />
+                          <span class="meta-label">{{ employee.employeeCode || 'No ID' }} · {{ employee.email }}</span>
+                        </td>
+                        <td>{{ employee.designation || '-' }}<br /><span class="meta-label">{{ employee.department || '-' }}</span></td>
+                        <td>{{ projectNames(employee) }}</td>
+                        <td><v-btn size="small" variant="tonal" @click="editEmployee(employee)">Edit</v-btn></td>
+                      </tr>
+                    </tbody>
+                  </v-table>
+                </div>
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-window-item>
+
+        <v-window-item value="projects">
+          <v-row class="mt-4" dense>
+            <v-col cols="12" md="5">
+              <v-card class="glass-card pa-6">
+                <p class="mini-kicker">{{ projectForm.id ? 'Update project' : 'Create project' }}</p>
+                <v-form class="mt-4" @submit.prevent="onSaveProject">
+                  <v-text-field v-model="projectForm.name" class="mb-3" label="Project name" />
+                  <v-text-field v-model="projectForm.code" class="mb-3" label="Project code" />
+                  <v-textarea v-model="projectForm.description" class="mb-3" label="Description" rows="3" />
+                  <v-switch v-model="projectForm.active" color="primary" label="Active" inset />
+                  <div class="d-flex ga-2 flex-wrap">
+                    <v-btn :loading="projectSaving" color="primary" type="submit">
+                      {{ projectForm.id ? 'Update project' : 'Create project' }}
+                    </v-btn>
+                    <v-btn v-if="projectForm.id" variant="text" @click="resetProjectForm">Cancel</v-btn>
+                  </div>
+                </v-form>
+              </v-card>
+            </v-col>
+            <v-col cols="12" md="7">
+              <v-card class="glass-card pa-6">
+                <p class="mini-kicker mb-3">Projects</p>
+                <p v-if="projects.length === 0" class="page-copy">Create a project before assigning it to an employee.</p>
+                <div v-else class="table-scroll">
+                  <v-table class="transparent-table">
+                    <thead>
+                      <tr>
+                        <th>Project</th>
+                        <th>Status</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="project in projects" :key="project.id">
+                        <td>{{ project.name }}<br /><span class="meta-label">{{ project.code }}</span></td>
+                        <td>{{ project.active ? 'Active' : 'Inactive' }}</td>
+                        <td><v-btn size="small" variant="tonal" @click="editProject(project)">Edit</v-btn></td>
+                      </tr>
+                    </tbody>
+                  </v-table>
+                </div>
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-window-item>
+
+        <v-window-item value="timesheets">
+          <v-card class="glass-card pa-6 mt-4">
+            <p class="mini-kicker mb-3">Employee timesheets</p>
+            <p v-if="timesheets.length === 0" class="page-copy">Submitted timesheets will appear here for approval.</p>
+            <div v-else class="table-scroll">
+              <v-table class="transparent-table">
+                <thead>
+                  <tr>
+                    <th>Employee</th>
+                    <th>Project</th>
+                    <th>Date</th>
+                    <th>Hours</th>
+                    <th>Work status</th>
+                    <th>Review</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="entry in timesheets" :key="entry.id">
+                    <td>{{ entry.employeeName }}<br /><span class="meta-label">{{ entry.employeeCode || '-' }}</span></td>
+                    <td>{{ entry.projectName }}</td>
+                    <td>{{ entry.workDate }}</td>
+                    <td>{{ Number(entry.hours).toFixed(2) }}</td>
+                    <td class="message-cell">{{ entry.workDescription }}</td>
+                    <td>
+                      <v-chip :color="statusColor(entry.status)" size="small" variant="tonal">{{ entry.status }}</v-chip>
+                      <p v-if="entry.reviewNote" class="meta-label mt-2">{{ entry.reviewNote }}</p>
+                      <v-btn
+                        v-if="entry.status === 'SUBMITTED'"
+                        class="mt-2"
+                        size="small"
+                        color="primary"
+                        variant="tonal"
+                        @click="openReview(entry)"
+                      >
+                        Review
+                      </v-btn>
+                    </td>
+                  </tr>
+                </tbody>
+              </v-table>
+            </div>
+          </v-card>
+        </v-window-item>
+      </v-window>
+
+      <v-dialog v-model="reviewDialog" max-width="520">
+        <v-card class="glass-card pa-6">
+          <p class="mini-kicker">Review timesheet</p>
+          <p class="page-copy">
+            {{ reviewTarget?.employeeName }} · {{ reviewTarget?.projectName }} · {{ reviewTarget?.workDate }}
+          </p>
+          <v-textarea v-model="reviewNote" class="mt-4" label="Review note" rows="3" />
+          <div class="d-flex ga-2 flex-wrap">
+            <v-btn :loading="reviewSaving" color="success" @click="onReview('APPROVED')">Approve</v-btn>
+            <v-btn :loading="reviewSaving" color="error" variant="tonal" @click="onReview('REJECTED')">Reject</v-btn>
+            <v-btn variant="text" @click="reviewDialog = false">Cancel</v-btn>
+          </div>
+        </v-card>
+      </v-dialog>
     </template>
   </v-container>
 </template>
@@ -289,10 +663,19 @@ onMounted(loadDashboard)
   background: transparent;
 }
 
+.table-scroll {
+  overflow-x: auto;
+}
+
 .transparent-table :deep(th),
 .transparent-table :deep(td) {
   color: var(--text-card-copy);
   vertical-align: top;
+}
+
+.meta-label {
+  color: var(--text-kicker);
+  font-size: 0.75rem;
 }
 
 .message-cell {

@@ -11,10 +11,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -42,6 +46,23 @@ public class AppUser {
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = 40)
     private Set<UserRole> roles = new HashSet<>();
+
+    @Column(unique = true, length = 40)
+    private String employeeCode;
+
+    @Column(length = 80)
+    private String designation;
+
+    @Column(length = 80)
+    private String department;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "employee_projects",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "project_id")
+    )
+    private List<Project> assignedProjects = new ArrayList<>();
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
@@ -93,6 +114,38 @@ public class AppUser {
 
     public void setRoles(Set<UserRole> roles) {
         this.roles = new HashSet<>(roles);
+    }
+
+    public String getEmployeeCode() {
+        return employeeCode;
+    }
+
+    public void setEmployeeCode(String employeeCode) {
+        this.employeeCode = employeeCode;
+    }
+
+    public String getDesignation() {
+        return designation;
+    }
+
+    public void setDesignation(String designation) {
+        this.designation = designation;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
+    public List<Project> getAssignedProjects() {
+        return assignedProjects;
+    }
+
+    public void setAssignedProjects(List<Project> assignedProjects) {
+        this.assignedProjects = assignedProjects;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -136,6 +136,54 @@ async function fetchEmployeeHome() {
   return request('/api/employee/home')
 }
 
+async function fetchEmployeeDashboard() {
+  return request('/api/employee/dashboard')
+}
+
+async function submitEmployeeTimesheet(payload) {
+  return request('/api/employee/timesheets', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+async function fetchAdminProjects() {
+  return request('/api/admin/projects')
+}
+
+async function saveAdminProject(payload, projectId) {
+  return request(projectId ? `/api/admin/projects/${projectId}` : '/api/admin/projects', {
+    method: projectId ? 'PUT' : 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+async function fetchAdminEmployees() {
+  return request('/api/admin/employees')
+}
+
+async function saveAdminEmployee(payload, employeeId) {
+  return request(employeeId ? `/api/admin/employees/${employeeId}` : '/api/admin/employees', {
+    method: employeeId ? 'PUT' : 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+async function fetchAdminTimesheets() {
+  return request('/api/admin/timesheets')
+}
+
+async function reviewAdminTimesheet(timesheetId, payload) {
+  return request(`/api/admin/timesheets/${timesheetId}/review`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
 async function fetchHrApplications() {
   return request('/api/hr/applications')
 }
@@ -197,8 +245,12 @@ export {
   clearSession,
   downloadApplicationFile,
   downloadResume,
+  fetchAdminEmployees,
+  fetchAdminProjects,
+  fetchAdminTimesheets,
   fetchAdminUsers,
   fetchCurrentUser,
+  fetchEmployeeDashboard,
   fetchEmployeeHome,
   fetchHrApplications,
   fetchHrContactInquiries,
@@ -208,4 +260,8 @@ export {
   hasRole,
   loginPortal,
   resolvePortalRoute,
+  reviewAdminTimesheet,
+  saveAdminEmployee,
+  saveAdminProject,
+  submitEmployeeTimesheet,
 }

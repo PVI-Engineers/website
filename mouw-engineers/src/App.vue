@@ -10,7 +10,6 @@ const route = useRoute()
 const theme = useTheme()
 
 const activePath = computed(() => route.path)
-const isEmployeePortal = computed(() => route.path.startsWith('/portal/employee'))
 const desktopRows = [serviceButtons, companyButtons]
 const desktopLabels = ['Service Domains', 'Company Sections']
 const year = new Date().getFullYear()
@@ -64,14 +63,13 @@ onMounted(() => {
 
 <template>
   <v-app class="mouw-app">
-    <div v-if="!isEmployeePortal" class="ambient-lights" aria-hidden="true">
+    <div class="ambient-lights" aria-hidden="true">
       <span class="light-orb orb-one"></span>
       <span class="light-orb orb-two"></span>
       <span class="light-orb orb-three"></span>
     </div>
 
     <v-navigation-drawer
-      v-if="!isEmployeePortal"
       v-model="drawer"
       class="mobile-drawer d-lg-none"
       location="right"
@@ -156,7 +154,7 @@ onMounted(() => {
       </v-list>
     </v-navigation-drawer>
 
-    <v-app-bar v-if="!isEmployeePortal" class="top-bar" flat height="110">
+    <v-app-bar class="top-bar" flat height="110">
       <v-container class="top-inner">
         <router-link class="brand-link" to="/">
           <span class="brand-mark">MOUW</span>
@@ -277,11 +275,11 @@ onMounted(() => {
       </v-container>
     </v-app-bar>
 
-    <v-main :class="{ 'portal-workspace': isEmployeePortal }">
+    <v-main>
       <router-view />
     </v-main>
 
-    <v-footer v-if="!isEmployeePortal" class="site-footer">
+    <v-footer class="site-footer">
       <v-container class="py-8">
         <v-row>
           <v-col cols="12" md="4">
@@ -337,11 +335,6 @@ onMounted(() => {
 <style scoped>
 .mouw-app {
   background: transparent;
-}
-
-.portal-workspace {
-  padding: 0 !important;
-  background: #f6f7f5;
 }
 
 .ambient-lights {
